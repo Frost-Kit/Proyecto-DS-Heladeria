@@ -8,19 +8,8 @@ namespace HeladeriaJackFrost.Controllers;
 
 public class HomeController : Controller
 {
-    private readonly HeladeriaDbContext _context;
-
-    public HomeController(HeladeriaDbContext context)
+    public IActionResult Index()
     {
-        // Aqui igual a de mejorar para usar injeccion de dependencias
-        _context = context;
-    }
-    
-    public async Task<IActionResult> Index()
-    {
-        // prueba rapidona (solo para probar)
-        var proveedores = await _context.Proveedor
-            .ToListAsync();
-        return View(proveedores);
+        return View();
     }
 }
