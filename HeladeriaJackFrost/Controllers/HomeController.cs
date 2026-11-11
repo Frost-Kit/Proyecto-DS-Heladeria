@@ -1,24 +1,28 @@
 using System.Diagnostics;
+using HeladeriaJackFrost.Data;
+using HeladeriaJackFrost.Models;
 using Microsoft.AspNetCore.Mvc;
 using HeladeriaJackFrost.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace HeladeriaJackFrost.Controllers;
 
 public class HomeController : Controller
 {
-    public IActionResult Index()
+    private readonly HeladeriaJackFrostDbContext _context;
+
+    public HomeController(HeladeriaJackFrostDbContext context)
     {
-        return View();
+        // Aqui igual a de mejorar para usar injeccion de dependencias
+        _context = context;
     }
 
-    public IActionResult Privacy()
+    public async Task<IActionResult> Index()
     {
-        return View();
-    }
+        // prueba rapidona (solo para probar)
+        var proveedores = await _context.Proveedores
+            .ToListAsync();
 
-    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-    public IActionResult Error()
-    {
-        return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        return View(proveedores);
     }
 }

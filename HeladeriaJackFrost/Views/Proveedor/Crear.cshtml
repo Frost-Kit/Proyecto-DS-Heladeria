@@ -1,0 +1,55 @@
+@model HeladeriaJackFrost.Models.Proveedor
+
+@{
+    ViewData["Title"] = "Registrar Nuevo Proveedor";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h4>Registrar Nuevo Proveedor</h4>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Crear" method="post">
+                        
+                        <div class="mb-3">
+                            <label asp-for="Nombre" class="form-label">Nombre del Contacto</label>
+                            <input asp-for="Nombre" class="form-control" required />
+                            <span asp-validation-for="Nombre" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Empresa" class="form-label">Empresa / Proveedor</label>
+                            <input asp-for="Empresa" class="form-control" required />
+                            <span asp-validation-for="Empresa" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Telefono" class="form-label">Teléfono</label>
+                            <input asp-for="Telefono" class="form-control" />
+                            <span asp-validation-for="Telefono" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Correo" class="form-label">Correo Electrónico</label>
+                            <input asp-for="Correo" type="email" class="form-control" />
+                            <span asp-validation-for="Correo" class="text-danger"></span>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success">Guardar Proveedor</button>
+                            <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">Cancelar</a>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

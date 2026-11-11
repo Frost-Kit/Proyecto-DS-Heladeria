@@ -1,3 +1,6 @@
+using HeladeriaJackFrost.Data;
+using Microsoft.EntityFrameworkCore;
+
 namespace HeladeriaJackFrost;
 
 public class Program
@@ -8,7 +11,10 @@ public class Program
 
         // Add services to the container.
         builder.Services.AddControllersWithViews();
-
+        
+        builder.Services.AddDbContext<HeladeriaJackFrostDbContext>(options =>
+            options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+        
         var app = builder.Build();
 
         // Configure the HTTP request pipeline.
