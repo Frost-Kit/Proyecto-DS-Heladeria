@@ -6,32 +6,34 @@ namespace HeladeriaJackFrost.Controllers;
 
 public class ProveedorController : Controller
 {
-    private readonly HeladeriaJackFrostDbContext _context;
+    private readonly HeladeriaDbContext _context;
 
-    public ProveedorController(HeladeriaJackFrostDbContext context)
+    public ProveedorController(HeladeriaDbContext context)
     {
         _context = context;
     }
-
+    
     // GET: /Proveedor/Crear
     [HttpGet]
     public IActionResult Crear()
     {
         return View();
     }
-
-    // POST: /Proveedor/Crear
+    
+    // POST: /Proveedor/Crear - HAY QUE USAR VIEWMODELS!!!!
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Crear(Proveedor proveedor)
     {
+        proveedor.Estado = 1;
         if (ModelState.IsValid)
         {
-            _context.Proveedores.Add(proveedor);
+            _context.Proveedor.Add(proveedor);
             await _context.SaveChangesAsync();
             return RedirectToAction("Index", "Home");
         }
 
         return View(proveedor);
     }
+    
 }
