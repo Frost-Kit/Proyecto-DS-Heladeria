@@ -13,4 +13,6 @@ public class ProductoViewModel
     public string Precio { get; set; } = null!;
 
     public string Stock { get; set; } = null!;
+
+    public int IdCategoria { get; set; } = 0;
 }

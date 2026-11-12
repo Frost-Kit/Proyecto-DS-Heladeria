@@ -1,4 +1,4 @@
-@model List<HeladeriaJackFrost.ViewModels.ProductoViewModel>
+@model HeladeriaJackFrost.ViewModels.ProductoViewModel
 
 @{
     ViewData["Title"] = "Registrar Producto";
@@ -12,34 +12,37 @@
                     <h4 class="mb-0">Registrar Nuevo Producto</h4>
                 </div>
                 <div class="card-body">
+                    
                     <form asp-action="Crear" method="post">
                         
                         <div class="mb-3">
-                            <label asp-for="Nombre" class="form-label">Empresa / Proveedor</label>
+                            <label asp-for="Nombre" class="form-label">Nombre del Producto</label>
                             <input asp-for="Nombre" class="form-control" />
-                            <span asp-validation-for="Nombre" class="text-danger"></span>
+                            @* <span asp-validation-for="Nombre" class="text-danger"></span> *@
                         </div>
 
                         <div class="mb-3">
-                            <label asp-for="NombreContacto" class="form-label">Nombre del Contacto</label>
-                            <input asp-for="NombreContacto" class="form-control" />
-                            <span asp-validation-for="NombreContacto" class="text-danger"></span>
+                            <label asp-for="IdCategoria" class="form-label">Categoría</label>
+                            <select asp-for="IdCategoria" class="form-control" asp-items="ViewBag.ListaCategorias">
+                                <option value="">Seleccione una categoría</option>
+                            </select>
+                            @* <span asp-validation-for="IdCategoria" class="text-danger"></span> *@
                         </div>
 
                         <div class="mb-3">
-                            <label asp-for="Telefono" class="form-label">Teléfono</label>
-                            <input asp-for="Telefono" class="form-control" />
-                            <span asp-validation-for="Telefono" class="text-danger"></span>
+                            <label asp-for="Precio" class="form-label">Precio</label>
+                            <input asp-for="Precio" class="form-control" />
+                            @* <span asp-validation-for="Precio" class="text-danger"></span> *@
                         </div>
 
                         <div class="mb-3">
-                            <label asp-for="Direccion" class="form-label">Dirección</label>
-                            <input asp-for="Direccion" class="form-control" />
-                            <span asp-validation-for="Direccion" class="text-danger"></span>
+                            <label asp-for="Stock" class="form-label">Stock</label>
+                            <input asp-for="Stock" class="form-control" />
+                            @* <span asp-validation-for="Stock" class="text-danger"></span> *@
                         </div>
 
                         <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-success">Guardar Proveedor</button>
+                            <button type="submit" class="btn btn-success">Guardar Producto</button>
                             <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
                         </div>
 

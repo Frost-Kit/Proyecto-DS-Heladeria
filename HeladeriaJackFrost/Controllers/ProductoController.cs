@@ -3,6 +3,8 @@ using HeladeriaJackFrost.Data;
 using HeladeriaJackFrost.Models;
 using HeladeriaJackFrost.ViewModels;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc.Rendering;
+
 
 namespace HeladeriaJackFrost.Controllers;
 
@@ -35,6 +37,15 @@ public class ProductoController : Controller
     [HttpGet]
     public IActionResult Crear()
     {
+        ViewBag.ListaCategorias = new SelectList(new List<object>
+        {
+            new { Id = 1, Texto = "1 - Cremas Clásicas" },
+            new { Id = 2, Texto = "2 - Cremas Especiales" },
+            new { Id = 3, Texto = "3 - Frutales al Agua" },
+            new { Id = 4, Texto = "4 - Postres Helados" },
+            new { Id = 5, Texto = "5 - Potes Familiares 2L" },
+            new { Id = 6, Texto = "6 - Línea Sin Azúcar / Keto" }
+        }, "Id", "Texto", 1);
         return View();
     }
 
@@ -47,15 +58,14 @@ public class ProductoController : Controller
             var producto = new Producto
             {
                 Nombre = viewModel.Nombre,
-                NombreContacto = viewModel.NombreContacto,
-                Telefono = viewModel.Telefono,
-                Direccion = viewModel.Direccion,
-                Estado = 1
+                Precio = decimal.Parse(viewModel.Precio),
+                Stock = int.Parse(viewModel.Stock),
+                IdCategoria = viewModel.IdCategoria
             };
 
             try
             {
-                _context.Proveedor.Add(proveedor);
+                _context.Producto.Add(producto);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
