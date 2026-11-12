@@ -2,6 +2,7 @@ using HeladeriaJackFrost.Data;
 using HeladeriaJackFrost.Models;
 using HeladeriaJackFrost.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 
 namespace HeladeriaJackFrost.Controllers;
@@ -17,9 +18,11 @@ public class ProveedorController : Controller
     
     public async Task<IActionResult> Index()
     {
-        // prueba rapidona (solo para probar)
         var proveedores = await _context.Proveedor
+            .Where(p => p.Estado != 5)
+            .OrderBy(p => p.IdProveedor)
             .ToListAsync();
+        
         return View(proveedores);
     }
     
@@ -27,6 +30,13 @@ public class ProveedorController : Controller
     [HttpGet]
     public IActionResult Crear()
     {
+        ViewBag.ListaEstados = new SelectList(new List<object>
+        {
+            new { Id = 1, Texto = "1 - Activo" },
+            new { Id = 2, Texto = "2 - Inactivo" },
+            new { Id = 3, Texto = "3 - En Vacaciones" },
+            new { Id = 4, Texto = "4 - Suspendido" }
+        }, "Id", "Texto", 1);
         return View();
     }
     
@@ -69,7 +79,15 @@ public class ProveedorController : Controller
         
         if (proveedorObejtivo == null)
             return NotFound();
-
+        
+        ViewBag.ListaEstados = new SelectList(new List<object>
+        {
+            new { Id = 1, Texto = "1 - Activo" },
+            new { Id = 2, Texto = "2 - Inactivo" },
+            new { Id = 3, Texto = "3 - En Vacaciones" },
+            new { Id = 4, Texto = "4 - Suspendido" }
+        }, "Id", "Texto", proveedorObejtivo.Estado);
+        
         var viewModel = new ProveedorViewModel
         {
             IdProveedor = proveedorObejtivo.IdProveedor,
@@ -91,7 +109,9 @@ public class ProveedorController : Controller
         {
             return View(viewModel);
         }
-        var proveedor = await _context.Proveedor.FirstOrDefaultAsync(x => x.IdProveedor == viewModel.IdProveedor);
+
+        var proveedor = await _context.Proveedor
+            .FindAsync(viewModel.IdProveedor);
         
         if (proveedor == null)
             return NotFound();
@@ -116,4 +136,22 @@ public class ProveedorController : Controller
         return RedirectToAction(nameof(Index));
     }
     
+    // POST: Proveedor/Eliminar
+    [HttpPost, ActionName("Eliminar")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EliminarConfirmed(int id)
+    {
+        var proveedor = await _context.Proveedor
+            .FindAsync(id);
+    
+        if (proveedor != null)
+        {
+            proveedor.Estado = 5;
+        
+            _context.Proveedor.Update(proveedor);
+            await _context.SaveChangesAsync();
+        }
+    
+        return RedirectToAction(nameof(Index));
+    }
 }

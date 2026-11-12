@@ -13,15 +13,15 @@
     <div class="table-responsive">
         <table class="table table-striped table-hover shadow-sm">
             <thead class="table-dark">
-                <tr>
-                    <th>ID</th>
-                    <th>Empresa</th>
-                    <th>Nombre del Contacto</th>
-                    <th>Teléfono</th>
-                    <th>Dirección</th>
-                    <th>Estado</th>
-                    <th class="text-center">Acciones</th>
-                </tr>
+            <tr>
+                <th>ID</th>
+                <th>Empresa</th>
+                <th>Nombre del Contacto</th>
+                <th>Teléfono</th>
+                <th>Dirección</th>
+                <th>Estado</th>
+                <th class="text-center">Acciones</th>
+            </tr>
             </thead>
             <tbody>
             @if (Model != null && Model.Any())
@@ -35,20 +35,51 @@
                         <td>@(!string.IsNullOrEmpty(item.Telefono) ? item.Telefono : "N/A")</td>
                         <td>@(!string.IsNullOrEmpty(item.Direccion) ? item.Direccion : "N/A")</td>
                         <td>
-                            <!-- considerar un swicth para ver que estado darle -->
-                            @if (item.Estado == 1)
-                            {
-                                <span class="badge bg-success">Activo</span>
+                            @{
+                                var (badgeStyle, textoEstado) = item.Estado switch
+                                {
+                                    1 => ("background-color: #ecfdf5; color: #047857; border: 1px solid #6ee7b7;", "Activo"),        // Verde equilibrado
+                                    2 => ("background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;", "Inactivo"),      // Gris neutro suave
+                                    3 => ("background-color: #fffbeb; color: #b45309; border: 1px solid #fcd34d;", "En Vacaciones"), // Ámbar cálido
+                                    4 => ("background-color: #ecfeff; color: #0e7490; border: 1px solid #67e8f9;", "Suspendido"),    // Celeste fresco
+                                    5 => ("background-color: #fef2f2; color: #b91c1c; border: 1px solid #fca5a5;", "Eliminado"),     // Rojo sutil
+                                    _ => ("background-color: #1e293b; color: #ffffff; border: 1px solid #0f172a;", $"Desconocido ({item.Estado})")
+                                };
                             }
-                            else
-                            {
-                                <span class="badge bg-secondary">Inactivo (@item.Estado)</span>
-                            }
+                            <span class="badge" style="@badgeStyle font-weight: 650; padding: 0.45rem 0.75rem; font-size: 0.8rem;">@textoEstado</span>
                         </td>
                         <td class="text-center">
-                            <!-- falta darles logica -->
-                            <a asp-controller="Proveedor" asp-action="Actualizar" asp-route-id="@item.IdProveedor" class="btn btn-sm btn-warning">Editar</a>
-                            <a asp-action="Eliminar" asp-route-id="@item.IdProveedor" class="btn btn-sm btn-danger">Eliminar</a>
+                            <a asp-controller="Proveedor"
+                               asp-action="Actualizar"
+                               asp-route-idProveedor="@item.IdProveedor"
+                               class="btn btn-sm btn-warning">
+                                Editar
+                            </a>
+                            
+                            <!-- Botón que abre su propio modal usando el ID -->
+                            <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#modalEliminar-@item.IdProveedor">
+                                Eliminar
+                            </button>
+                            <div class="modal fade text-start" id="modalEliminar-@item.IdProveedor" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-danger text-white">
+                                            <h5 class="modal-title">Confirmar Eliminación</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                        </div>
+                                        <div class="modal-body text-wrap">
+                                            ¿Estás seguro de que deseas eliminar al proveedor <strong>@item.Nombre</strong>?
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                            <form asp-action="Eliminar" asp-route-id="@item.IdProveedor" method="post">
+                                                <button type="submit" class="btn btn-danger">Sí, eliminar</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
                         </td>
                     </tr>
                 }
@@ -63,3 +94,5 @@
         </table>
     </div>
 </div>
+
+

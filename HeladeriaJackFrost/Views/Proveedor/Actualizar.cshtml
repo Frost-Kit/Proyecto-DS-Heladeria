@@ -42,10 +42,11 @@
                         
                         <div class="mb-3">
                             <label asp-for="Estado" class="form-label">Estado</label>
-                            <input asp-for="Estado" class="form-control" />
+                            <select asp-for="Estado" asp-items="ViewBag.ListaEstados" class="form-select">
+                                <option value="">-- Seleccione un estado --</option>
+                            </select>
                             <span asp-validation-for="Estado" class="text-danger"></span>
                         </div>
-
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-success">Guardar Proveedor</button>
                             <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
