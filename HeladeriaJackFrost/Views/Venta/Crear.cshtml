@@ -1,0 +1,110 @@
+@model HeladeriaJackFrost.ViewModels.VentaViewModel
+@{
+    ViewData["Title"] = "Registrar Nueva Venta";
+    var productos = ViewBag.Productos as List<HeladeriaJackFrost.Models.Producto> ?? new();
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">Registrar Venta en Mostrador</h4>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Crear" method="post">
+                        
+                        <div class="mb-3">
+                            <label asp-for="IdPersonal" class="form-label">Cajero en Turno</label>
+                            <select asp-for="IdPersonal" asp-items="ViewBag.Personal" class="form-select">
+                                <option value="">-- Seleccione el cajero --</option>
+                            </select>
+                            <span asp-validation-for="IdPersonal" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="IdCliente" class="form-label">Cliente</label>
+                            <select asp-for="IdCliente" asp-items="ViewBag.Clientes" class="form-select">
+                                <option value="">-- Seleccione un cliente --</option>
+                            </select>
+                            <span asp-validation-for="IdCliente" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="IdProducto" class="form-label">Producto Disponible</label>
+                            <select asp-for="IdProducto" id="selectProducto" class="form-select">
+                                <option value="0" data-precio="0">-- Seleccione un producto --</option>
+                                @foreach (var prod in productos)
+                                {
+                                    <option value="@prod.IdProducto" data-precio="@prod.Precio">
+                                        @prod.Nombre - Bs. @prod.Precio (Stock: @prod.Stock)
+                                    </option>
+                                }
+                            </select>
+                            <span asp-validation-for="IdProducto" class="text-danger"></span>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Cantidad" class="form-label">Cantidad</label>
+                                <input asp-for="Cantidad" id="inputCantidad" type="number" min="1" class="form-control" />
+                                <span asp-validation-for="Cantidad" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Descuento" class="form-label">Descuento (Bs.)</label>
+                                <input asp-for="Descuento" id="inputDescuento" type="number" step="0.50" min="0" class="form-control" />
+                                <span asp-validation-for="Descuento" class="text-danger"></span>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label asp-for="EstadoInicial" class="form-label">Estado de la Operación</label>
+                            <select asp-for="EstadoInicial" class="form-select">
+                                <option value="1">1 - Completada (Pagada y entregada)</option>
+                                <option value="2">2 - Pendiente (En espera de pago / QR)</option>
+                                <option value="3">3 - En Preparación (Pagada, en barra)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="alert alert-info d-flex justify-content-between align-items-center">
+                            <span><strong>Total calculado:</strong></span>
+                            <span class="fs-4 fw-bold" id="textoTotal">Bs. 0.00</span>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success">Confirmar Venta</button>
+                            <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        const selectProducto = document.getElementById('selectProducto');
+        const inputCantidad = document.getElementById('inputCantidad');
+        const inputDescuento = document.getElementById('inputDescuento');
+        const textoTotal = document.getElementById('textoTotal');
+
+        function calcularTotal() {
+            const opcion = selectProducto.options[selectProducto.selectedIndex];
+            const precio = parseFloat(opcion ? opcion.getAttribute('data-precio') : 0) || 0;
+            const cantidad = parseInt(inputCantidad.value) || 0;
+            const descuento = parseFloat(inputDescuento.value) || 0;
+
+            const total = Math.max(0, (precio * cantidad) - descuento);
+            textoTotal.textContent = 'Bs. ' + total.toFixed(2);
+        }
+
+        selectProducto.addEventListener('change', calcularTotal);
+        inputCantidad.addEventListener('input', calcularTotal);
+        inputDescuento.addEventListener('input', calcularTotal);
+        calcularTotal();
+    </script>
+}
