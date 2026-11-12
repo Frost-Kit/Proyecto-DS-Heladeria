@@ -24,6 +24,9 @@
                         <a class="nav-link text-dark" asp-area="" asp-controller="Proveedor" asp-action="Index">Provedores</a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link text-dark" asp-area="" asp-controller="Producto" asp-action="Index">Productos</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link text-dark" asp-area="" asp-controller="Venta" asp-action="Index">Ventas</a>
                     </li>
                     
@@ -57,14 +60,14 @@
         </div>
     </nav>
 </header>
-<div class="container">
-    <main role="main" class="pb-3">
+<div class="container mb-5 pb-3">
+    <main role="main" class="mb-5 pb-3">
         @RenderBody()
     </main>
 </div>
 
-<footer class="border-top footer text-muted">
-    <div class="container" style="color: #c6d5df">
+<footer class="border-top footer text-muted mt-5 py-3">
+    <div class="container">
         &copy; 2026 - HeladeriaJackFrost - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
     </div>
 </footer>
