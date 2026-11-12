@@ -1,0 +1,116 @@
+@model List<HeladeriaJackFrost.Models.Venta>
+
+@{
+    ViewData["Title"] = "Control de Ventas en Mostrador";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Listado de Transacciones</h2>
+        <div>
+            <a asp-action="Index" asp-route-soloHoy="true" class="btn btn-outline-primary me-2">Ver solo hoy</a>
+            <a asp-action="Index" asp-route-soloHoy="false" class="btn btn-outline-secondary me-2">Ver todas</a>
+            <a asp-controller="Venta" asp-action="Crear" class="btn btn-success">Registrar Nueva Venta</a>
+        </div>
+    </div>
+
+    @if (TempData["MensajeExito"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["MensajeExito"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="table-responsive">
+        <table class="table table-striped table-hover shadow-sm">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID Venta</th>
+                    <th>Fecha y Hora</th>
+                    <th>Productos (Cant. x Precio)</th>
+                    <th>Total (Bs.)</th>
+                    <th>Estado Actual</th>
+                    <th class="text-center">Cambiar Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+            @if (Model != null && Model.Any())
+            {
+                foreach (var venta in Model)
+                {
+                    <tr>
+                        <td>#@venta.IdVenta</td>
+                        <td>@venta.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>
+                            @foreach (var det in venta.Detalle)
+                            {
+                                <div>
+                                    <strong>@det.IdProductoNavigation?.Nombre</strong>: 
+                                    @det.Cantidad u. x Bs. @det.PrecioUnitario
+                                    @if (det.Descuento > 0)
+                                    {
+                                        <span class="text-danger">(-Bs. @det.Descuento)</span>
+                                    }
+                                </div>
+                            }
+                        </td>
+                        <td class="fw-bold text-nowrap align-middle">Bs. @venta.Total</td>
+                        <td>
+                            @switch ((HeladeriaJackFrost.Models.EstadoVenta)venta.Estado)
+                            {
+                                case HeladeriaJackFrost.Models.EstadoVenta.Completada:
+                                    <span class="badge bg-success">1 - Completada</span>
+                                    break;
+                                case HeladeriaJackFrost.Models.EstadoVenta.Pendiente:
+                                    <span class="badge bg-warning text-dark">2 - Pendiente (Pago)</span>
+                                    break;
+                                case HeladeriaJackFrost.Models.EstadoVenta.EnPreparacion:
+                                    <span class="badge bg-info text-dark">3 - En Preparación</span>
+                                    break;
+                                case HeladeriaJackFrost.Models.EstadoVenta.Anulada:
+                                    <span class="badge bg-secondary">4 - Anulada</span>
+                                    break;
+                                case HeladeriaJackFrost.Models.EstadoVenta.Reembolsada:
+                                    <span class="badge bg-danger">5 - Reembolsada</span>
+                                    break;
+                            }
+                        </td>
+                        <td class="text-center">
+                            <form asp-action="CambiarEstado" method="post" class="d-inline-flex gap-1 align-items-center">
+                                <input type="hidden" name="idVenta" value="@venta.IdVenta" />
+                                <select name="nuevoEstado" class="form-select form-select-sm pe-4" style="min-width: 175px;">
+                                    <option value="1" selected="@(venta.Estado == 1)">1 - Completada</option>
+                                    <option value="2" selected="@(venta.Estado == 2)">2 - Pendiente</option>
+                                    <option value="3" selected="@(venta.Estado == 3)">3 - En Preparación</option>
+                                    <option value="4" selected="@(venta.Estado == 4)">4 - Anulada</option>
+                                    <option value="5" selected="@(venta.Estado == 5)">5 - Reembolsada</option>
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-outline-primary">Guardar</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="5" class="text-center text-muted py-4">No hay ventas registradas todavía.</td>
+                </tr>
+            }
+            </tbody>
+            @if (Model != null && Model.Any())
+            {
+                <tfoot class="table-light">
+                <tr>
+                    <td colspan="3" class="text-end fw-bold">Ingresos reales en caja (Completadas + En Preparación):</td>
+                    <td colspan="3" class="fw-bold text-success fs-5">
+                        Bs. @Model.Where(v => v.Estado == (int)HeladeriaJackFrost.Models.EstadoVenta.Completada 
+                                              || v.Estado == (int)HeladeriaJackFrost.Models.EstadoVenta.EnPreparacion).Sum(v => v.Total)
+                    </td>
+                </tr>
+                </tfoot>
+            }
+        </table>
+    </div>
+</div>
