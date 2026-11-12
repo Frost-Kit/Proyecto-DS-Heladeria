@@ -31,11 +31,10 @@
                             <td>@item.ID_Producto</td>
                             <td>@item.Categoria</td>
                             <td>@item.Nombre</td>
-                            <td>@item.Precio</td>
+                            <td>@item.Precio.ToString("N2")</td>
                             <td>@item.Stock</td>
                             <td class="text-center">
-                                <!-- falta darles logica -->
-                                <a asp-action="Editar" asp-route-id="@item.ID_Producto"
+                                <a asp-action="Actualizar" asp-route-id="@item.ID_Producto"
                                    class="btn btn-sm btn-warning">Editar</a>
                                 <a asp-action="Eliminar" asp-route-id="@item.ID_Producto"
                                    class="btn btn-sm btn-danger">Eliminar</a>
@@ -46,7 +45,7 @@
                 else
                 {
                     <tr>
-                        <td colspan="7" class="text-center text-muted py-4">No hay productos registrados todavía.</td>
+                        <td colspan="6" class="text-center text-muted py-4">No hay productos registrados todavía.</td>
                     </tr>
                 }
             </tbody>

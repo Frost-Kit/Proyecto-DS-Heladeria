@@ -14,31 +14,34 @@
                 <div class="card-body">
                     
                     <form asp-action="Crear" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
                         
                         <div class="mb-3">
                             <label asp-for="Nombre" class="form-label">Nombre del Producto</label>
-                            <input asp-for="Nombre" class="form-control" />
-                            @* <span asp-validation-for="Nombre" class="text-danger"></span> *@
+                            <input asp-for="Nombre" class="form-control"
+                                   pattern="[\s\S]*[A-Za-zÁÉÍÓÚÜÑáéíóúüñ][\s\S]*"
+                                   title="Incluya al menos una letra; puede usar números y caracteres especiales." />
+                            <span asp-validation-for="Nombre" class="text-danger"></span>
                         </div>
 
                         <div class="mb-3">
                             <label asp-for="IdCategoria" class="form-label">Categoría</label>
-                            <select asp-for="IdCategoria" class="form-control" asp-items="ViewBag.ListaCategorias">
+                            <select asp-for="IdCategoria" class="form-select" asp-items="ViewBag.ListaCategorias">
                                 <option value="">Seleccione una categoría</option>
                             </select>
-                            @* <span asp-validation-for="IdCategoria" class="text-danger"></span> *@
+                            <span asp-validation-for="IdCategoria" class="text-danger"></span>
                         </div>
 
                         <div class="mb-3">
                             <label asp-for="Precio" class="form-label">Precio</label>
-                            <input asp-for="Precio" class="form-control" />
-                            @* <span asp-validation-for="Precio" class="text-danger"></span> *@
+                            <input asp-for="Precio" class="form-control" type="number" min="0.01" step="0.01" />
+                            <span asp-validation-for="Precio" class="text-danger"></span>
                         </div>
 
                         <div class="mb-3">
                             <label asp-for="Stock" class="form-label">Stock</label>
-                            <input asp-for="Stock" class="form-control" />
-                            @* <span asp-validation-for="Stock" class="text-danger"></span> *@
+                            <input asp-for="Stock" class="form-control" type="number" min="0" step="1" />
+                            <span asp-validation-for="Stock" class="text-danger"></span>
                         </div>
 
                         <div class="d-grid gap-2">

@@ -1,10 +1,10 @@
-using Microsoft.AspNetCore.Mvc;
 using HeladeriaJackFrost.Data;
 using HeladeriaJackFrost.Models;
 using HeladeriaJackFrost.ViewModels;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-
+using Microsoft.EntityFrameworkCore;
+using System.Text.RegularExpressions;
 
 namespace HeladeriaJackFrost.Controllers;
 
@@ -19,62 +19,224 @@ public class ProductoController : Controller
 
     public async Task<IActionResult> Index()
     {
-        // prueba rapidona (solo para probar)
         var productos = await _context.Producto
             .Include(p => p.IdCategoriaNavigation)
+            .OrderBy(p => p.IdProducto)
             .Select(p => new ProductoViewModel
             {
-                ID_Producto = p.IdProducto.ToString(),
+                ID_Producto = p.IdProducto,
                 Categoria = p.IdCategoriaNavigation.Nombre,
                 Nombre = p.Nombre,
-                Precio = p.Precio.ToString("F2"),
-                Stock = p.Stock.ToString()
+                Precio = p.Precio,
+                Stock = p.Stock
             })
             .ToListAsync();
+
         return View(productos);
     }
 
     [HttpGet]
-    public IActionResult Crear()
+    public async Task<IActionResult> Crear()
     {
-        ViewBag.ListaCategorias = new SelectList(new List<object>
-        {
-            new { Id = 1, Texto = "1 - Cremas Clásicas" },
-            new { Id = 2, Texto = "2 - Cremas Especiales" },
-            new { Id = 3, Texto = "3 - Frutales al Agua" },
-            new { Id = 4, Texto = "4 - Postres Helados" },
-            new { Id = 5, Texto = "5 - Potes Familiares 2L" },
-            new { Id = 6, Texto = "6 - Línea Sin Azúcar / Keto" }
-        }, "Id", "Texto", 1);
-        return View();
+        await CargarCategorias();
+        return View(new ProductoViewModel());
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Crear(ProductoViewModel viewModel)
     {
-        if (ModelState.IsValid)
-        {
-            var producto = new Producto
-            {
-                Nombre = viewModel.Nombre,
-                Precio = decimal.Parse(viewModel.Precio),
-                Stock = int.Parse(viewModel.Stock),
-                IdCategoria = viewModel.IdCategoria
-            };
+        if (!NombreValido(viewModel.Nombre))
+            ModelState.AddModelError(nameof(viewModel.Nombre),
+                "El nombre debe incluir al menos una letra; puede contener números y caracteres especiales.");
 
-            try
-            {
-                _context.Producto.Add(producto);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            catch (Exception ex)
-            {
-                ModelState.AddModelError("", "Error al guardar en la base de datos: " + ex.Message);
-            }
+        await ValidarCategoria(viewModel.IdCategoria);
+
+        if (!ModelState.IsValid)
+        {
+            await CargarCategorias(viewModel.IdCategoria);
+            return View(viewModel);
         }
 
+        var producto = new Producto
+        {
+            Nombre = viewModel.Nombre,
+            Precio = viewModel.Precio,
+            Stock = viewModel.Stock,
+            IdCategoria = viewModel.IdCategoria
+        };
+
+        try
+        {
+            _context.Producto.Add(producto);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
+        catch (DbUpdateException)
+        {
+            ModelState.AddModelError(string.Empty,
+                "No se pudo guardar el producto. Verifique que el nombre no esté duplicado y vuelva a intentarlo.");
+            await CargarCategorias(viewModel.IdCategoria);
+            return View(viewModel);
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Actualizar(int id)
+    {
+        var producto = await _context.Producto.FindAsync(id);
+
+        if (producto == null)
+            return NotFound();
+
+        var viewModel = new ProductoViewModel
+        {
+            ID_Producto = producto.IdProducto,
+            IdCategoria = producto.IdCategoria,
+            Nombre = producto.Nombre,
+            Precio = producto.Precio,
+            Stock = producto.Stock
+        };
+
+        await CargarCategorias(viewModel.IdCategoria);
         return View(viewModel);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Actualizar(ProductoViewModel viewModel)
+    {
+        var producto = await _context.Producto.FindAsync(viewModel.ID_Producto);
+
+        if (producto == null)
+            return NotFound();
+
+        if (!string.Equals(viewModel.Nombre, producto.Nombre, StringComparison.Ordinal)
+            && !NombreValido(viewModel.Nombre))
+        {
+            ModelState.AddModelError(nameof(viewModel.Nombre),
+                "El nombre debe incluir al menos una letra; puede contener números y caracteres especiales.");
+        }
+
+        await ValidarCategoria(viewModel.IdCategoria);
+
+        if (!ModelState.IsValid)
+        {
+            await CargarCategorias(viewModel.IdCategoria);
+            return View(viewModel);
+        }
+
+        producto.Nombre = viewModel.Nombre;
+        producto.Precio = viewModel.Precio;
+        producto.Stock = viewModel.Stock;
+        producto.IdCategoria = viewModel.IdCategoria;
+
+        try
+        {
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
+        catch (DbUpdateException)
+        {
+            ModelState.AddModelError(string.Empty,
+                "No se pudo actualizar el producto. Verifique que el nombre no esté duplicado y vuelva a intentarlo.");
+            await CargarCategorias(viewModel.IdCategoria);
+            return View(viewModel);
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Eliminar(int id)
+    {
+        var producto = await _context.Producto
+            .Include(p => p.IdCategoriaNavigation)
+            .FirstOrDefaultAsync(p => p.IdProducto == id);
+
+        if (producto == null)
+            return NotFound();
+
+        return View(new ProductoViewModel
+        {
+            ID_Producto = producto.IdProducto,
+            Categoria = producto.IdCategoriaNavigation.Nombre,
+            Nombre = producto.Nombre,
+            Precio = producto.Precio,
+            Stock = producto.Stock
+        });
+    }
+
+    [HttpPost, ActionName("Eliminar")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EliminarConfirmado(int id)
+    {
+        var producto = await _context.Producto.FindAsync(id);
+
+        if (producto == null)
+            return NotFound();
+
+        var tieneCompras = await _context.Compra.AnyAsync(c => c.IdProducto == id);
+        var tieneVentas = await _context.Detalle.AnyAsync(d => d.IdProducto == id);
+
+        if (tieneCompras || tieneVentas)
+        {
+            ModelState.AddModelError(string.Empty,
+                "No se puede eliminar este producto porque está asociado a compras o ventas registradas.");
+            return View("Eliminar", await ObtenerProductoViewModel(id));
+        }
+
+        try
+        {
+            _context.Producto.Remove(producto);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
+        catch (DbUpdateException)
+        {
+            ModelState.AddModelError(string.Empty,
+                "No se pudo eliminar el producto porque tiene registros relacionados o ocurrió un error al guardar.");
+            return View("Eliminar", await ObtenerProductoViewModel(id));
+        }
+    }
+
+    private async Task ValidarCategoria(int idCategoria)
+    {
+        if (!await _context.Categoria.AnyAsync(c => c.IdCategoria == idCategoria))
+            ModelState.AddModelError(nameof(ProductoViewModel.IdCategoria),
+                "Seleccione una categoría válida.");
+    }
+
+    private static bool NombreValido(string? nombre)
+    {
+        return !string.IsNullOrWhiteSpace(nombre)
+            && Regex.IsMatch(nombre, @"\p{L}");
+    }
+
+    private async Task CargarCategorias(int? seleccionada = null)
+    {
+        var categorias = await _context.Categoria
+            .OrderBy(c => c.IdCategoria)
+            .ToListAsync();
+
+        ViewBag.ListaCategorias = new SelectList(
+            categorias,
+            nameof(Categoria.IdCategoria),
+            nameof(Categoria.Nombre),
+            seleccionada);
+    }
+
+    private async Task<ProductoViewModel> ObtenerProductoViewModel(int id)
+    {
+        var producto = await _context.Producto
+            .Include(p => p.IdCategoriaNavigation)
+            .FirstAsync(p => p.IdProducto == id);
+
+        return new ProductoViewModel
+        {
+            ID_Producto = producto.IdProducto,
+            Categoria = producto.IdCategoriaNavigation.Nombre,
+            Nombre = producto.Nombre,
+            Precio = producto.Precio,
+            Stock = producto.Stock
+        };
     }
 }
