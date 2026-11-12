@@ -143,7 +143,7 @@ a {
 
 .navbar {
   background: var(--nav-bg) !important;
-  padding: 0.85rem 0;
+  padding: 0.85rem 0.5rem;
   border-bottom: 3px solid var(--accent-color);
   box-shadow: var(--shadow-md);
 }
@@ -497,8 +497,10 @@ a {
   text-decoration: underline;
 }
 
+/* 11. MODAL Confimar eliminacion
+   ========================================================================== 
+*/
 
-/*ESTILOs DE LA MODAL*/
 .modal-content {
   border: none !important;
   border-radius: var(--radius-lg, 15px) !important;
