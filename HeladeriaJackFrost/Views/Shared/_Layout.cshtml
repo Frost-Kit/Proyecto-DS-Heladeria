@@ -23,8 +23,26 @@
                     <li class="nav-item">
                         <a class="nav-link text-dark" asp-area="" asp-controller="Proveedor" asp-action="Index">Provedores</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                    
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center gap-1" href="#" id="configDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Configuración
+                        </a>
+                        <ul class="dropdown-menu shadow-sm border-0" aria-labelledby="configDropdown">
+                            <li>
+                                <h6 class="dropdown-header text-uppercase small fw-bold">Gestión de Catálogos</h6>
+                            </li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2" asp-area="" asp-controller="Producto" asp-action="Index">
+                                    Productos
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2" asp-area="" asp-controller="Proveedor" asp-action="Index">
+                                    Proveedores
+                                </a>
+                            </li>
+                        </ul>
                     </li>
                 </ul>
             </div>
