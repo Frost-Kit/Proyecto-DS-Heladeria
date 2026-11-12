@@ -1,0 +1,55 @@
+@model List<HeladeriaJackFrost.ViewModels.ProductoViewModel>
+
+@{
+    ViewData["Title"] = "Gestión de Productos";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Lista de Productos</h2>
+        <a asp-controller="Producto" asp-action="Crear" class="btn btn-success">Registrar Nuevo Producto</a>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="table table-striped table-hover shadow-sm">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID Producto</th>
+                    <th>Categoria</th>
+                    <th>Nombre</th>
+                    <th>Precio</th>
+                    <th>Stock</th>
+                    <th class="text-center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model != null && Model.Any())
+                {
+                    foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@item.ID_Producto</td>
+                            <td>@item.Categoria</td>
+                            <td>@item.Nombre</td>
+                            <td>@item.Precio</td>
+                            <td>@item.Stock</td>
+                            <td class="text-center">
+                                <!-- falta darles logica -->
+                                <a asp-action="Editar" asp-route-id="@item.ID_Producto"
+                                   class="btn btn-sm btn-warning">Editar</a>
+                                <a asp-action="Eliminar" asp-route-id="@item.ID_Producto"
+                                   class="btn btn-sm btn-danger">Eliminar</a>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">No hay productos registrados todavía.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
