@@ -433,6 +433,12 @@ a {
   background-color: #f0f8fc;
 }
 
+.celda-flex {
+  display: flex;
+  justify-content: center; /* Centra horizontalmente */
+  align-items: center;     /* Centra verticalmente */
+}
+
 
 /* 8. BADGES
    ========================================================================== */
