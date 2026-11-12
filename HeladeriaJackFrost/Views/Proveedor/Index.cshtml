@@ -19,7 +19,7 @@
                 <th>Nombre del Contacto</th>
                 <th>Teléfono</th>
                 <th>Dirección</th>
-                <th>Estado</th>
+                <th class="text-center">Estado</th>
                 <th class="text-center">Acciones</th>
             </tr>
             </thead>
@@ -29,24 +29,26 @@
                 foreach (var item in Model)
                 {
                     <tr>
-                        <td>@item.IdProveedor</td>
+                        <td class="text-center">@item.IdProveedor</td>
                         <td>@item.Nombre</td>
                         <td>@item.NombreContacto</td>
                         <td>@(!string.IsNullOrEmpty(item.Telefono) ? item.Telefono : "N/A")</td>
                         <td>@(!string.IsNullOrEmpty(item.Direccion) ? item.Direccion : "N/A")</td>
                         <td>
-                            @{
-                                var (badgeStyle, textoEstado) = item.Estado switch
-                                {
-                                    1 => ("background-color: #ecfdf5; color: #047857; border: 1px solid #6ee7b7;", "Activo"),        // Verde equilibrado
-                                    2 => ("background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;", "Inactivo"),      // Gris neutro suave
-                                    3 => ("background-color: #fffbeb; color: #b45309; border: 1px solid #fcd34d;", "En Vacaciones"), // Ámbar cálido
-                                    4 => ("background-color: #ecfeff; color: #0e7490; border: 1px solid #67e8f9;", "Suspendido"),    // Celeste fresco
-                                    5 => ("background-color: #fef2f2; color: #b91c1c; border: 1px solid #fca5a5;", "Eliminado"),     // Rojo sutil
-                                    _ => ("background-color: #1e293b; color: #ffffff; border: 1px solid #0f172a;", $"Desconocido ({item.Estado})")
-                                };
-                            }
-                            <span class="badge" style="@badgeStyle font-weight: 650; padding: 0.45rem 0.75rem; font-size: 0.8rem;">@textoEstado</span>
+                            <div class="celda-flex">
+                                @{
+                                    var (badgeStyle, textoEstado) = item.Estado switch
+                                    {
+                                        1 => ("background-color: #ecfdf5; color: #047857; border: 1px solid #6ee7b7;", "Activo"),        // Verde equilibrado
+                                        2 => ("background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;", "Inactivo"),      // Gris neutro suave
+                                        3 => ("background-color: #fffbeb; color: #b45309; border: 1px solid #fcd34d;", "En Vacaciones"), // Ámbar cálido
+                                        4 => ("background-color: #ecfeff; color: #0e7490; border: 1px solid #67e8f9;", "Suspendido"),    // Celeste fresco
+                                        5 => ("background-color: #fef2f2; color: #b91c1c; border: 1px solid #fca5a5;", "Eliminado"),     // Rojo sutil
+                                        _ => ("background-color: #1e293b; color: #ffffff; border: 1px solid #0f172a;", $"Desconocido ({item.Estado})")
+                                    };
+                                }
+                                <span class="badge" style="@badgeStyle font-weight: 650; padding: 0.45rem 0.75rem; font-size: 0.8rem;">@textoEstado</span>
+                            </div>
                         </td>
                         <td class="text-center">
                             <a asp-controller="Proveedor"
