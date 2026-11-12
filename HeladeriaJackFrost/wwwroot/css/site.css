@@ -29,3 +29,594 @@ body {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
 }
+
+/* ==========================================================================
+   JACK FROST - MODERN EDITION
+   Sistema de gestión para heladería
+   ========================================================================== */
+
+/* 1. VARIABLES Y PALETA
+   ========================================================================== */
+
+:root {
+  color-scheme: light;
+
+  /* Marca */
+  --primary-color: #1677a8;
+  --primary-hover: #12658f;
+  --primary-light: #e7f3f8;
+
+  --secondary-color: #39866c;
+  --accent-color: #62c5e8;
+  --accent-warm: #e99a65;
+
+  /* Estados */
+  --danger-color: #d95365;
+  --danger-hover: #bd4052;
+
+  --warning-color: #e8a23d;
+  --success-color: #39866c;
+
+  /* Superficies */
+  --bg-body: #f4f7fa;
+  --bg-surface: #ffffff;
+  --bg-soft: #f8fafc;
+
+  /* Textos */
+  --text-main: #243746;
+  --text-muted: #718096;
+  --text-light: #a0aec0;
+
+  /* Bordes */
+  --border-color: #e2eaf0;
+  --border-strong: #cbd8e2;
+
+  /* Navbar */
+  --nav-bg: #1c3040;
+  --nav-hover: rgba(98, 197, 232, 0.13);
+
+  /* Dimensiones */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 22px;
+
+  /* Sombras */
+  --shadow-sm: 0 2px 8px rgba(36, 55, 70, 0.05);
+  --shadow-md: 0 6px 20px rgba(36, 55, 70, 0.08);
+  --shadow-lg: 0 12px 30px rgba(36, 55, 70, 0.12);
+
+  /* Transiciones */
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s ease;
+}
+
+
+/* 2. RESET Y ESTILOS GLOBALES
+   ========================================================================== */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  background-color: var(--bg-body);
+  color: var(--text-main);
+
+  font-family:
+          Inter,
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+
+  line-height: 1.6;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-main);
+  font-weight: 700;
+  letter-spacing: -0.4px;
+}
+
+a {
+  transition: var(--transition-fast);
+}
+
+::selection {
+  background: var(--primary-light);
+  color: var(--primary-color);
+}
+
+
+/* 3. NAVBAR
+   ========================================================================== */
+
+.navbar {
+  background: var(--nav-bg) !important;
+  padding: 0.85rem 0;
+  border-bottom: 3px solid var(--accent-color);
+  box-shadow: var(--shadow-md);
+}
+
+.navbar-brand {
+  color: #ffffff !important;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  transition: var(--transition-fast);
+}
+
+.navbar-brand:hover {
+  color: var(--accent-color) !important;
+}
+
+.navbar-nav .nav-link {
+  color: #dce8ef !important;
+  font-weight: 600;
+  font-size: 0.93rem;
+
+  padding: 0.55rem 1rem !important;
+  border-radius: var(--radius-sm);
+
+  transition: var(--transition-fast);
+}
+
+.navbar-nav .nav-link:hover,
+.navbar-nav .nav-link.active {
+  color: #ffffff !important;
+  background: var(--nav-hover);
+}
+
+/* Dropdown */
+
+.navbar .dropdown-menu {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+
+  padding: 0.5rem;
+  margin-top: 0.6rem !important;
+}
+
+.navbar .dropdown-item {
+  color: var(--text-main);
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 1rem;
+
+  transition: var(--transition-fast);
+}
+
+.navbar .dropdown-item:hover {
+  background: var(--primary-light);
+  color: var(--primary-color);
+}
+
+.navbar .dropdown-header {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+}
+
+
+/* 4. CARDS Y CONTENEDORES
+   ========================================================================== */
+
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+
+  transition: box-shadow var(--transition-normal);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.card-header {
+  background: var(--bg-soft) !important;
+  color: var(--text-main);
+
+  border-bottom: 1px solid var(--border-color);
+  padding: 1.15rem 1.5rem;
+}
+
+.card-header h4,
+.card-header h5,
+.card-header h6 {
+  color: var(--text-main);
+  font-weight: 700;
+  margin: 0;
+}
+
+.card-body {
+  padding: 1.75rem;
+}
+
+.card-footer {
+  background: var(--bg-soft);
+  border-top: 1px solid var(--border-color);
+  padding: 1rem 1.5rem;
+}
+
+
+/* 5. FORMULARIOS
+   ========================================================================== */
+
+.form-label {
+  color: var(--text-main);
+  font-size: 0.9rem;
+  font-weight: 650;
+  margin-bottom: 0.45rem;
+}
+
+.form-control,
+.form-select {
+  background-color: #ffffff;
+  color: var(--text-main);
+
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+
+  padding: 0.7rem 0.95rem;
+  font-size: 0.94rem;
+
+  transition: var(--transition-fast);
+}
+
+.form-control::placeholder {
+  color: var(--text-light);
+}
+
+.form-control:hover,
+.form-select:hover {
+  border-color: #a5bdcc;
+}
+
+.form-control:focus,
+.form-select:focus {
+  background-color: #ffffff;
+  border-color: var(--primary-color);
+
+  box-shadow: 0 0 0 3px rgba(22, 119, 168, 0.13);
+
+  color: var(--text-main);
+  outline: none;
+}
+
+.form-control:disabled,
+.form-select:disabled {
+  background-color: #f1f5f8;
+  cursor: not-allowed;
+}
+
+
+/* 6. BOTONES
+   ========================================================================== */
+
+.btn {
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 0.9rem;
+
+  padding: 0.65rem 1.15rem;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+
+  transition: var(--transition-fast);
+}
+
+.btn:focus-visible {
+  outline: 3px solid rgba(22, 119, 168, 0.25);
+  outline-offset: 2px;
+}
+
+.btn-primary {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.btn-success {
+  background: var(--success-color);
+  border-color: var(--success-color);
+  color: #ffffff;
+}
+
+.btn-success:hover {
+  background: #2f705b;
+  border-color: #2f705b;
+  color: #ffffff;
+}
+
+.btn-warning {
+  background: var(--warning-color);
+  border-color: var(--warning-color);
+  color: #243746;
+}
+
+.btn-warning:hover {
+  background: #d88e29;
+  border-color: #d88e29;
+  color: #243746;
+}
+
+.btn-danger {
+  background: var(--danger-color);
+  border-color: var(--danger-color);
+}
+
+.btn-danger:hover {
+  background: var(--danger-hover);
+  border-color: var(--danger-hover);
+}
+
+.btn-secondary {
+  background: #718096;
+  border-color: #718096;
+}
+
+.btn-secondary:hover {
+  background: #5b6879;
+  border-color: #5b6879;
+}
+
+
+/* 7. TABLAS
+   ========================================================================== */
+
+.table-responsive {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  overflow-x: auto;
+}
+
+.table {
+  color: var(--text-main);
+  margin-bottom: 0;
+  vertical-align: middle;
+}
+
+.table > thead {
+  background: #edf4f8;
+  color: var(--text-main);
+}
+
+.table > thead th {
+  padding: 1rem;
+  font-size: 0.78rem;
+  font-weight: 750;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+
+.table > tbody td {
+  padding: 0.95rem 1rem;
+  border-bottom: 1px solid #edf1f5;
+}
+
+.table > tbody > tr:last-child td {
+  border-bottom: none;
+}
+
+.table-hover > tbody > tr:hover > * {
+  background-color: #f0f8fc;
+}
+
+
+/* 8. BADGES
+   ========================================================================== */
+
+.badge {
+  border-radius: 6px;
+  font-weight: 650;
+  padding: 0.45rem 0.7rem;
+}
+
+
+/* 9. ALERTAS
+   ========================================================================== */
+
+.alert {
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+}
+
+.alert-success {
+  background: #e8f5ef;
+  color: #28694f;
+}
+
+.alert-danger {
+  background: #fcebed;
+  color: #a93b4b;
+}
+
+.alert-warning {
+  background: #fff5df;
+  color: #875b17;
+}
+
+.alert-info {
+  background: #e7f3f8;
+  color: #17658c;
+}
+
+
+/* 10. FOOTER
+   ========================================================================== */
+
+.footer {
+  position: relative;
+  width: 100%;
+
+  background: var(--nav-bg);
+  color: #c6d5df;
+
+  border-top: 3px solid var(--accent-color);
+  padding: 1.2rem 0;
+
+  text-align: center;
+  font-size: 0.88rem;
+}
+
+.footer a {
+  color: var(--accent-color);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.footer a:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+
+/* 11. SCROLLBAR
+   ========================================================================== */
+
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-body);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #bdcbd5;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #8fa6b5;
+}
+
+
+/* 12. RESPONSIVIDAD
+   ========================================================================== */
+
+@media (max-width: 768px) {
+
+  .card-body {
+    padding: 1.25rem;
+  }
+
+  .card-header {
+    padding: 1rem 1.15rem;
+  }
+
+  .navbar {
+    padding: 0.65rem 0;
+  }
+
+  .navbar-nav .nav-link {
+    padding: 0.7rem 0.85rem !important;
+  }
+
+  .table > thead th,
+  .table > tbody td {
+    padding: 0.75rem;
+  }
+
+  .btn {
+    font-size: 0.85rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+.modal-content {
+  border: none !important;
+  border-radius: var(--radius-lg, 15px) !important;
+  box-shadow: 0 15px 35px rgba(36, 55, 70, 0.2) !important;
+  overflow: hidden !important; /* <--- Esto es clave para recortar lo que sobresalga */
+}
+
+.modal-header.bg-danger {
+  background: var(--danger-color, #d95365) !important;
+  color: #ffffff !important;
+  padding: 1.25rem 1.5rem !important;
+  border-bottom: none !important;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  /* Aseguramos que las esquinas superiores sigan la curva del modal */
+  border-top-left-radius: calc(var(--radius-lg, 18px) - 1px);
+  border-top-right-radius: calc(var(--radius-lg, 18px) - 1px);
+}
+
+.modal-header .modal-title {
+  color: #ffffff !important;
+  font-weight: 700;
+  font-size: 1.15rem;
+}
+
+.modal-header .btn-close {
+  filter: brightness(0) invert(1);
+  opacity: 0.8;
+  transition: var(--transition-fast, 0.2s ease);
+}
+
+.modal-header .btn-close:hover {
+  opacity: 1;
+}
+
+.modal-body {
+  background-color: var(--bg-surface, #ffffff);
+  color: var(--text-main, #243746);
+  padding: 1.75rem 1.5rem 1.25rem 1.5rem !important;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.modal-footer {
+  background-color: var(--bg-surface, #ffffff);
+  border-top: 1px solid var(--border-color, #e2eaf0) !important;
+  padding: 1rem 1.5rem 1.25rem 1.5rem !important;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}

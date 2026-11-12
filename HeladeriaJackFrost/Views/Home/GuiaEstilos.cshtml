@@ -1,0 +1,150 @@
+@{
+    ViewData["Title"] = "Guía de Estilos y Componentes";
+    Layout = null;
+}
+
+<head>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true"/>
+    <link rel="stylesheet" href="~/HeladeriaJackFrost.styles.css" asp-append-version="true"/>
+</head>
+
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>Guía de Estilos - Heladería Jack Frost</h2>
+            <p class="text-muted">Vista de referencia para probar todos los componentes de Bootstrap con el diseño personalizado.</p>
+        </div>
+        <a asp-controller="Proveedor" asp-action="Index" class="btn btn-secondary">Volver a Proveedores</a>
+    </div>
+
+    <!-- SECCIÓN 1: TIPOGRAFÍA -->
+    <section class="mb-5">
+        <h3 class="border-bottom pb-2 mb-3">1. Tipografía</h3>
+        <h1>Encabezado H1 - Título Principal</h1>
+        <h2>Encabezado H2 - Subtítulo de Sección</h2>
+        <h3>Encabezado H3 - Título de Tarjeta</h3>
+        <p class="lead">Este es un párrafo con estilo destacado (`lead`). Ideal para introducciones o textos importantes.</p>
+        <p>Este es un párrafo estándar de texto común. Muestra cómo se comporta el interlineado y el color de texto principal configurado en el CSS.</p>
+    </section>
+
+    <!-- SECCIÓN 2: BOTONES -->
+    <section class="mb-5">
+        <h3 class="border-bottom pb-2 mb-3">2. Botones</h3>
+        <div class="d-flex flex-wrap gap-2">
+            <button type="button" class="btn btn-success">Guardar / Éxito</button>
+            <button type="button" class="btn btn-warning">Editar / Precaución</button>
+            <button type="button" class="btn btn-danger">Eliminar / Alerta</button>
+            <button type="button" class="btn btn-secondary">Cancelar / Neutral</button>
+            <button type="button" class="btn btn-success" disabled>Botón Deshabilitado</button>
+        </div>
+    </section>
+
+    <!-- SECCIÓN 3: BADGES (ESTADOS) -->
+    <section class="mb-5">
+        <h3 class="border-bottom pb-2 mb-3">3. Etiquetas de Estado (Badges del 1 al 5)</h3>
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+            <span class="badge bg-success">1 - Activo</span>
+            <span class="badge bg-secondary">2 - Inactivo</span>
+            <span class="badge bg-warning text-dark">3 - En Vacaciones</span>
+            <span class="badge bg-info text-dark">4 - Suspendido</span>
+            <span class="badge bg-danger">5 - Eliminado (Soft Delete)</span>
+        </div>
+    </section>
+
+    <!-- SECCIÓN 4: TARJETAS (CARDS) Y FORMULARIOS -->
+    <section class="mb-5">
+        <h3 class="border-bottom pb-2 mb-3">4. Tarjetas y Formularios</h3>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card shadow">
+                    <div class="card-header bg-success text-white">
+                        <h4 class="mb-0">Ejemplo de Tarjeta / Formulario</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Campo de Texto Normal</label>
+                            <input type="text" class="form-control" placeholder="Escribe algo aquí...">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Menú Desplegable (Select)</label>
+                            <select class="form-select">
+                                <option>-- Seleccione una opción --</option>
+                                <option value="1">Opción 1</option>
+                                <option value="2">Opción 2</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Campo con error simulado</label>
+                            <input type="text" class="form-control is-invalid" value="Texto incorrecto">
+                            <span class="text-danger small">Este campo contiene un error de validación.</span>
+                        </div>
+                        <button type="button" class="btn btn-success w-100">Enviar Formulario</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card shadow">
+                    <div class="card-header bg-success text-white">
+                        <h4 class="mb-0">Alertas e Informes</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-success" role="alert">
+                            <strong>¡Éxito!</strong> Los cambios se han guardado correctamente en la base de datos.
+                        </div>
+                        <div class="alert alert-warning" role="alert">
+                            <strong>Atención:</strong> Estás a punto de modificar un registro importante.
+                        </div>
+                        <div class="alert alert-danger" role="alert">
+                            <strong>Error:</strong> No se pudo completar la operación solicitada.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECCIÓN 5: TABLAS -->
+    <section class="mb-5">
+        <h3 class="border-bottom pb-2 mb-3">5. Tablas de Datos</h3>
+        <div class="table-responsive">
+            <table class="table table-striped table-hover shadow-sm">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Empresa</th>
+                        <th>Contacto</th>
+                        <th>Teléfono</th>
+                        <th>Estado</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td>Helados del Norte S.A.</td>
+                        <td>Carlos Pérez</td>
+                        <td>+54 9 11 1234-5678</td>
+                        <td><span class="badge bg-success">Activo</span></td>
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-warning">Editar</button>
+                            <button class="btn btn-sm btn-danger">Eliminar</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td>Frutas y Pulpas SRL</td>
+                        <td>María Gómez</td>
+                        <td>+54 9 11 8765-4321</td>
+                        <td><span class="badge bg-warning text-dark">Vacaciones</span></td>
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-warning">Editar</button>
+                            <button class="btn btn-sm btn-danger">Eliminar</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
