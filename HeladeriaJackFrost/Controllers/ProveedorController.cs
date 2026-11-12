@@ -30,7 +30,7 @@ public class ProveedorController : Controller
         return View();
     }
     
-    // POST: /Proveedor/Crear - HAY QUE USAR VIEWMODELS!!!!
+    // POST: /Proveedor/Crear
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Crear(ProveedorViewModel viewModel)
@@ -59,6 +59,61 @@ public class ProveedorController : Controller
         }
         
         return View(viewModel);
+    }
+    
+    // GET: Actualizar datos del proveedor
+    public async Task<IActionResult> Actualizar(int idProveedor)
+    {
+        var proveedorObejtivo = await  _context.Proveedor
+            .FindAsync(idProveedor);
+        
+        if (proveedorObejtivo == null)
+            return NotFound();
+
+        var viewModel = new ProveedorViewModel
+        {
+            IdProveedor = proveedorObejtivo.IdProveedor,
+            Nombre = proveedorObejtivo.Nombre,
+            NombreContacto = proveedorObejtivo.NombreContacto,
+            Telefono = proveedorObejtivo.Telefono,
+            Direccion = proveedorObejtivo.Direccion,
+            Estado = proveedorObejtivo.Estado
+        };
+        return View(viewModel);
+    }
+    
+    // Post: Actualizar
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Actualizar(ProveedorViewModel viewModel)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(viewModel);
+        }
+        var proveedor = await _context.Proveedor.FirstOrDefaultAsync(x => x.IdProveedor == viewModel.IdProveedor);
+        
+        if (proveedor == null)
+            return NotFound();
+        
+        proveedor.Nombre = viewModel.Nombre;
+        proveedor.NombreContacto = viewModel.NombreContacto;
+        proveedor.Telefono = viewModel.Telefono;
+        proveedor.Direccion = viewModel.Direccion;
+        proveedor.Estado = viewModel.Estado;
+
+        try
+        {
+            _context.Proveedor.Update(proveedor);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
+        catch (Exception ex)
+        {
+            ModelState.AddModelError("", "Error al guardar en la base de datos: " + ex.Message);
+        }
+        
+        return RedirectToAction(nameof(Index));
     }
     
 }
