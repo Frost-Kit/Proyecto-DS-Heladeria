@@ -17,10 +17,24 @@ public class ProductoController : Controller
         _context = context;
     }
 
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(int? idCategoria)
     {
-        var productos = await _context.Producto
+        var categorias = await _context.Categoria
+            .OrderBy(c => c.Nombre)
+            .ToListAsync();
+
+        var consulta = _context.Producto
             .Include(p => p.IdCategoriaNavigation)
+            .AsQueryable();
+
+        if (idCategoria.HasValue
+            && categorias.Any(c => c.IdCategoria == idCategoria.Value))
+        {
+            consulta = consulta.Where(p => p.IdCategoria == idCategoria.Value);
+            ViewBag.IdCategoriaSeleccionada = idCategoria.Value;
+        }
+
+        var productos = await consulta
             .OrderBy(p => p.IdProducto)
             .Select(p => new ProductoViewModel
             {
@@ -31,6 +45,12 @@ public class ProductoController : Controller
                 Stock = p.Stock
             })
             .ToListAsync();
+
+        ViewBag.ListaCategorias = new SelectList(
+            categorias,
+            nameof(Categoria.IdCategoria),
+            nameof(Categoria.Nombre),
+            ViewBag.IdCategoriaSeleccionada);
 
         return View(productos);
     }
