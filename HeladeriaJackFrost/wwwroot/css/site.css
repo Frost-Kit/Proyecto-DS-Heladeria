@@ -106,6 +106,7 @@ html {
 
 body {
   min-height: 100vh;
+  min-width: 320px;
   background-color: var(--bg-body);
   color: var(--text-main);
 
@@ -120,7 +121,6 @@ body {
   line-height: 1.6;
   margin: 0;
   -webkit-font-smoothing: antialiased;
-  min-width: 320px;
   overflow-x: auto;
 }
 
@@ -398,25 +398,24 @@ a {
   margin: 0;
 }
 
-.btn-logout .btn-danger {
-  background-color: transparent !important;
+.btn-logout .btn.btn-danger {
+  background-color: rgba(217, 83, 101, 0.15) !important;
   color: var(--danger-color) !important;
   font-weight: 500;
   padding: 0.5rem 1rem !important;
   border-radius: var(--radius-md) !important;
-  border: 1px solid rgba(217, 83, 101, 0.3) !important;
+  border: 1px solid rgba(217, 83, 101, 0.4) !important;
   transition: all var(--transition-fast) !important;
   text-decoration: none;
 }
 
 /* Efecto al pasar el cursor (Hover) */
-.btn-logout .btn-danger:hover {
+.btn-logout .btn.btn-danger:hover {
   background-color: var(--danger-color) !important;
   color: #ffffff !important;
   border-color: var(--danger-color) !important;
   box-shadow: var(--shadow-sm);
 }
-
 
 /* 7. TABLAS
    ========================================================================== */
@@ -641,4 +640,73 @@ a {
   max-width: 85%;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+
+
+/* Fix al hamburguesa */
+.navbar-toggler {
+  border: 1px solid rgba(98, 197, 232, 0.4) !important; /* Borde sutil acentuado */
+  border-radius: var(--radius-sm);
+  padding: 0.4rem 0.6rem;
+  background-color: transparent !important;
+  transition: var(--transition-fast);
+}
+
+.navbar-toggler-icon {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 1%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
+}
+
+.navbar-toggler:hover {
+  border-color: var(--accent-color) !important;
+  background-color: var(--nav-hover) !important;
+  transform: scale(1.05);
+}
+
+/* efecto al hacerle clic o mantener activo (focus / active) */
+.navbar-toggler:focus,
+.navbar-toggler:active {
+  box-shadow: 0 0 0 3px rgba(98, 197, 232, 0.25) !important;
+  outline: none;
+}
+
+/* ==========================================================================
+   Media querys para el nav
+   ========================================================================== */
+@media (max-width: 575.98px) {
+  
+  .navbar-collapse.show,
+  .navbar-collapse.collapsing {
+    background-color: rgba(22, 43, 58, 0.95);   /* Fondo semitransparente con tinte oscuro de la marca */
+    border: 1px solid rgba(98, 197, 232, 0.2);  /* Borde sutil acentuado */
+    border-radius: var(--radius-md);            /* Bordes redondeados */
+    padding: 1.25rem 1rem;                      /* Espaciado interno generoso */
+    margin-top: 0.85rem;                        /* Separación respecto a la barra superior */
+    box-shadow: var(--shadow-lg);               /* Sombra profunda para dar efecto de relieve/flotante */
+  }
+  
+  .navbar-collapse.show .navbar-nav .nav-link,
+  .navbar-collapse.collapsing .navbar-nav .nav-link {
+    color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.05);
+    margin-bottom: 0.4rem;
+    border-radius: var(--radius-sm);
+  }
+
+  .navbar-collapse.show .navbar-nav .nav-link:hover {
+    background-color: var(--nav-hover) !important;
+  }
+}
+
+@media (max-width: 380px) {
+  
+  .navbar-brand {
+    font-size: 1.3rem !important;
+    max-width: 55%;
+    word-break: break-word;
+  }
+  
+  .navbar .d-flex.align-items-center.gap-2 {
+    gap: 0.35rem !important;
+  }
 }
