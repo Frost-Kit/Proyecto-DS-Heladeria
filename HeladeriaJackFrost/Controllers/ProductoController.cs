@@ -5,9 +5,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Authorization;
 
 namespace HeladeriaJackFrost.Controllers;
 
+[Authorize(Roles = "Administrador")]
 public class ProductoController : Controller
 {
     private readonly HeladeriaDbContext _context;

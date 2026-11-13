@@ -31,7 +31,7 @@ body {
 }
 
 /* ==========================================================================
-   JACK FROST - MODERN EDITION
+   JACK FROST - ESTILAZOS
    Sistema de gestión para heladería
    ========================================================================== */
 
@@ -120,6 +120,8 @@ body {
   line-height: 1.6;
   margin: 0;
   -webkit-font-smoothing: antialiased;
+  min-width: 320px;
+  overflow-x: auto;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -144,7 +146,7 @@ a {
 .navbar {
   background: var(--nav-bg) !important;
   padding: 0.85rem 0.5rem;
-  border-bottom: 3px solid var(--accent-color);
+  border-bottom: 3px solid var(--accent-color) !important;
   box-shadow: var(--shadow-md);
 }
 
@@ -386,6 +388,35 @@ a {
   border-color: #5b6879;
 }
 
+/* el de cerrar sesion */
+.btn-logout {
+  display: inline-flex;
+  align-items: center;
+}
+
+.btn-logout form {
+  margin: 0;
+}
+
+.btn-logout .btn-danger {
+  background-color: transparent !important;
+  color: var(--danger-color) !important;
+  font-weight: 500;
+  padding: 0.5rem 1rem !important;
+  border-radius: var(--radius-md) !important;
+  border: 1px solid rgba(217, 83, 101, 0.3) !important;
+  transition: all var(--transition-fast) !important;
+  text-decoration: none;
+}
+
+/* Efecto al pasar el cursor (Hover) */
+.btn-logout .btn-danger:hover {
+  background-color: var(--danger-color) !important;
+  color: #ffffff !important;
+  border-color: var(--danger-color) !important;
+  box-shadow: var(--shadow-sm);
+}
+
 
 /* 7. TABLAS
    ========================================================================== */
@@ -435,8 +466,8 @@ a {
 
 .celda-flex {
   display: flex;
-  justify-content: center; /* Centra horizontalmente */
-  align-items: center;     /* Centra verticalmente */
+  justify-content: center;
+  align-items: center;
 }
 
 
@@ -457,6 +488,13 @@ a {
   border: none;
   border-radius: var(--radius-md);
   padding: 1rem 1.25rem;
+}
+
+.alert ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  text-align: center;
 }
 
 .alert-success {
@@ -483,8 +521,8 @@ a {
 /* 10. FOOTER
    ========================================================================== 
 */
-.footer {
 
+.footer {
   background: var(--nav-bg);
   color: #c6d5df !important;
 
@@ -511,7 +549,7 @@ a {
   border: none !important;
   border-radius: var(--radius-lg, 15px) !important;
   box-shadow: 0 15px 35px rgba(36, 55, 70, 0.2) !important;
-  overflow: hidden !important; /* <--- Esto es clave para recortar lo que sobresalga */
+  overflow: hidden !important;
 }
 
 .modal-header.bg-danger {
@@ -522,10 +560,7 @@ a {
   display: flex;
   align-items: center;
   justify-content: space-between;
-
-  /* Aseguramos que las esquinas superiores sigan la curva del modal */
-  border-top-left-radius: calc(var(--radius-lg, 18px) - 1px);
-  border-top-right-radius: calc(var(--radius-lg, 18px) - 1px);
+  
 }
 
 .modal-header .modal-title {
@@ -559,4 +594,51 @@ a {
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;
+}
+
+/* 12. PANTALLA DE LOGIN ESPECÍFICA
+   ========================================================================== */
+
+.login-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--nav-bg) 0%, var(--primary-color) 100%);
+  padding: 1.5rem;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.login-header {
+  background: var(--nav-bg);
+  padding: 2.5rem 1.5rem 2rem 1.5rem;
+  border-bottom: 3px solid var(--accent-color);
+}
+
+.login-header h3 {
+  color: #ffffff !important;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin-top: 0.5rem;
+}
+
+.form-floating > .form-control {
+  padding-right: 0.5rem;
+  text-overflow: ellipsis;
+}
+
+.form-floating > label {
+  font-size: 1rem;
+  white-space: nowrap;
+  max-width: 85%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

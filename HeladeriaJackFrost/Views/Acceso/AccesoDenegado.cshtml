@@ -1,0 +1,49 @@
+@{
+    ViewData["Title"] = "Acceso Denegado";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Heladería Jack Frost</title>
+    
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap-icons/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body style="background-color: var(--bg-body); margin: 0; font-family: system-ui, -apple-system, sans-serif;">
+
+    <div class="container d-flex align-items-center justify-content-center" style="min-height: 100vh;">
+        <div class="card shadow-lg border-0 p-5 text-center" style="max-width: 480px; width: 100%; border-radius: var(--radius-lg); background-color: var(--bg-surface);">
+            
+            <!-- Icono -->
+            <div class="mb-4">
+                <div class="d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px; border-radius: 50%; background-color: rgba(217, 83, 101, 0.12); color: var(--danger-color);">
+                    <i class="bi bi-lock-fill" style="font-size: 36px;"></i>
+                </div>
+            </div>
+
+            <!-- Títulos -->
+            <h2 class="fw-bold mb-2" style="color: var(--text-main);">Acceso Restringido</h2>
+            <p class="text-muted mb-4" style="font-size: 0.95rem;">
+                Lo sentimos, tu usuario no cuenta con los permisos necesarios para ingresar a este módulo de la heladería.
+            </p>
+
+            <!-- Botones de acción -->
+            <div class="d-grid gap-2">
+                <a class="btn text-white py-2" asp-controller="Home" asp-action="Index" style="background-color: var(--primary-color); border-radius: var(--radius-md); font-weight: 500;">
+                    Volver al Inicio
+                </a>
+                <a class="btn py-2" asp-controller="Acceso" asp-action="Login" style="background-color: var(--bg-soft); color: var(--text-main); border: 1px solid var(--border-color); border-radius: var(--radius-md); font-weight: 500;">
+                    Iniciar sesión con otra cuenta
+                </a>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
