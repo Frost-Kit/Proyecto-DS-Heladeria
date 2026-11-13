@@ -1,0 +1,88 @@
+@model HeladeriaJackFrost.ViewModels.VentaViewModel
+@{
+    var productos = ViewBag.Productos as List<HeladeriaJackFrost.Models.Producto> ?? new();
+}
+
+<div class="modal fade" id="modalNuevaVenta" tabindex="-1" aria-labelledby="modalNuevaVentaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content shadow">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="modalNuevaVentaLabel">Registrar Venta en Mostrador</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+
+            <form id="formNuevaVenta" asp-controller="Venta" asp-action="Crear" method="post">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-12 col-md-6 mb-3">
+                            <label asp-for="IdPersonal" class="form-label fw-semibold">Cajero en Turno</label>
+                            <select asp-for="IdPersonal" id="selectPersonal" asp-items="ViewBag.Personal" class="form-select">
+                                <option value="">-- Seleccione el cajero --</option>
+                            </select>
+                            <span asp-validation-for="IdPersonal" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-12 col-md-6 mb-3">
+                            <label asp-for="IdCliente" class="form-label fw-semibold">Cliente</label>
+                            <select asp-for="IdCliente" id="selectCliente" asp-items="ViewBag.Clientes" class="form-select">
+                                <option value="">-- Seleccione un cliente --</option>
+                            </select>
+                            <span asp-validation-for="IdCliente" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="IdProducto" class="form-label fw-semibold">Producto Disponible</label>
+                        <select asp-for="IdProducto" id="selectProducto" class="form-select">
+                            <option value="0" data-precio="0">-- Seleccione un producto --</option>
+                            @foreach (var prod in productos)
+                            {
+                                <option value="@prod.IdProducto" data-precio="@prod.Precio">
+                                    @prod.Nombre - Bs. @prod.Precio (Stock: @prod.Stock)
+                                </option>
+                            }
+                        </select>
+                        <span asp-validation-for="IdProducto" class="text-danger small"></span>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12 col-sm-4 mb-3">
+                            <label asp-for="Cantidad" class="form-label fw-semibold">Cantidad</label>
+                            <input asp-for="Cantidad" id="inputCantidad" type="number" inputmode="numeric" min="1" class="form-control" />
+                            <span asp-validation-for="Cantidad" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-12 col-sm-4 mb-3">
+                            <label asp-for="Descuento" class="form-label fw-semibold">Descuento (Bs.)</label>
+                            <input asp-for="Descuento" id="inputDescuento" type="number" inputmode="decimal" step="0.50" min="0" class="form-control" />
+                            <span asp-validation-for="Descuento" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-12 col-sm-4 mb-3">
+                            <label asp-for="EstadoInicial" class="form-label fw-semibold">Estado de Operación</label>
+                            <select asp-for="EstadoInicial" id="selectEstadoInicial" class="form-select">
+                                <option value="1">1 - Completada</option>
+                                <option value="2">2 - Pendiente (QR)</option>
+                                <option value="3">3 - En Preparación</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info d-flex justify-content-between align-items-center mb-0">
+                        <span>
+                            <strong>Total a cobrar:</strong>
+                            <small class="d-block text-muted">Atajos: <kbd>Esc</kbd> cancelar | <kbd>Ctrl+S</kbd> o <kbd>Enter</kbd> guardar</small>
+                        </span>
+                        <span class="fs-4 fw-bold" id="textoTotal">Bs. 0.00</span>
+                    </div>
+                </div>
+
+                <!-- Botones abajo a la derecha (Patrón de lectura natural) -->
+                <div class="modal-footer justify-content-end gap-2">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Confirmar Venta</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

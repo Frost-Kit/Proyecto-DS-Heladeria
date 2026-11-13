@@ -21,45 +21,31 @@ public class VentaController : Controller
     // Listado de transacciones realizadas
     public async Task<IActionResult> Index(bool soloHoy = false)
     {
-        var query = _context.Venta
-            .Include(v => v.IdClienteNavigation)
-                .ThenInclude(c => c.IdPersonaNavigation)
-            .Include(v => v.IdPersonalNavigation)
-                .ThenInclude(p => p.IdPersonaNavigation)
-            .Include(v => v.Detalle)
-                .ThenInclude(d => d.IdProductoNavigation)
-            .AsQueryable();
-
-        if (soloHoy)
-        {
-            var hoy = DateTime.Today;
-            query = query.Where(v => v.Fecha.Date == hoy);
-        }
-
-        var ventas = await query
-            .OrderByDescending(v => v.Fecha)
-            .ThenByDescending(v => v.IdVenta)
-            .ToListAsync();
+        var ventas = await ObtenerVentasFiltradas(soloHoy);
+        await CargarListasDesplegables();
 
         ViewBag.SoloHoy = soloHoy;
+        ViewBag.VentaForm = new VentaViewModel { Cantidad = 1, Descuento = 0, EstadoInicial = 1 };
+        ViewBag.AbrirModalVenta = false;
+
         return View(ventas);
     }
     
     [HttpGet]
-    public async Task<IActionResult> Crear()
+    public IActionResult Crear()
     {
-        await CargarListasDesplegables();
-        return View(new VentaViewModel { Cantidad = 1, Descuento = 0 });
+        // Si alguien entra directo por URL a /Venta/Crear, lo llevamos a Index y abrimos el modal
+        TempData["AbrirModalAlCargar"] = true;
+        return RedirectToAction(nameof(Index));
     }
     
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Crear(VentaViewModel model)
     {
-        // Escenarios 2 y 3: Validación de campos vacíos, cero o negativos
         if (model.IdProducto <= 0)
         {
-            ModelState.AddModelError("IdProducto", "Debe seleccionar al menos un producto disponible.");
+            ModelState.AddModelError("IdProducto", "Por favor, seleccione al menos un producto disponible.");
         }
 
         if (model.Cantidad <= 0)
@@ -67,47 +53,51 @@ public class VentaController : Controller
             ModelState.AddModelError("Cantidad", "La cantidad debe ser un número válido mayor a cero.");
         }
 
-        // Verificar que el producto exista y tenga stock disponible
         var producto = await _context.Producto.FindAsync(model.IdProducto);
         if (producto == null)
         {
-            ModelState.AddModelError("IdProducto", "El producto seleccionado no existe.");
+            ModelState.AddModelError("IdProducto", "El producto seleccionado no existe o ya no está disponible.");
         }
         else if (producto.Stock < model.Cantidad)
         {
-            ModelState.AddModelError("Cantidad", $"Stock insuficiente. Solo quedan {producto.Stock} unidades de {producto.Nombre}.");
+            ModelState.AddModelError("Cantidad", $"Stock insuficiente: solo quedan {producto.Stock} unidades de {producto.Nombre}.");
         }
 
         if (!ModelState.IsValid)
         {
+            var ventas = await ObtenerVentasFiltradas(false);
             await CargarListasDesplegables();
-            return View(model);
+            ViewBag.SoloHoy = false;
+            ViewBag.VentaForm = model;
+            ViewBag.AbrirModalVenta = true; // Reabre el modal automáticamente con los errores
+            return View("Index", ventas);
         }
 
-        // Escenario 1: Cálculo automático (Cantidad * Precio Unitario - Descuento)
         decimal precioUnitario = producto!.Precio;
         decimal subtotal = (precioUnitario * model.Cantidad) - model.Descuento;
 
         if (subtotal < 0)
         {
-            ModelState.AddModelError("Descuento", "El descuento no puede ser mayor al monto de la venta.");
+            ModelState.AddModelError("Descuento", "El descuento no puede superar el monto total de la venta.");
+            var ventas = await ObtenerVentasFiltradas(false);
             await CargarListasDesplegables();
-            return View(model);
+            ViewBag.SoloHoy = false;
+            ViewBag.VentaForm = model;
+            ViewBag.AbrirModalVenta = true;
+            return View("Index", ventas);
         }
 
-        // Crear la cabecera de la Venta con la fecha actual
         var nuevaVenta = new Venta
         {
             IdCliente = model.IdCliente,
             IdPersonal = model.IdPersonal,
             Fecha = DateTime.Now,
             Total = subtotal,
-            Estado = Enum.IsDefined(typeof(EstadoVenta), model.EstadoInicial) 
-                ? model.EstadoInicial 
+            Estado = Enum.IsDefined(typeof(EstadoVenta), model.EstadoInicial)
+                ? model.EstadoInicial
                 : (int)EstadoVenta.Completada
         };
 
-        // Crear el Detalle asociado a la Venta
         var nuevoDetalle = new Detalle
         {
             IdVentaNavigation = nuevaVenta,
@@ -118,7 +108,6 @@ public class VentaController : Controller
             Subtotal = subtotal
         };
 
-        // Descontar el stock del producto vendido
         producto.Stock -= model.Cantidad;
 
         _context.Venta.Add(nuevaVenta);
@@ -223,5 +212,27 @@ public class VentaController : Controller
             .ToListAsync();
 
         ViewBag.Personal = new SelectList(personal, "IdPersonal", "NombreCargo");
+    }
+    private async Task<List<Venta>> ObtenerVentasFiltradas(bool soloHoy)
+    {
+        var query = _context.Venta
+            .Include(v => v.IdClienteNavigation)
+            .ThenInclude(c => c.IdPersonaNavigation)
+            .Include(v => v.IdPersonalNavigation)
+            .ThenInclude(p => p.IdPersonaNavigation)
+            .Include(v => v.Detalle)
+            .ThenInclude(d => d.IdProductoNavigation)
+            .AsQueryable();
+
+        if (soloHoy)
+        {
+            var hoy = DateTime.Today;
+            query = query.Where(v => v.Fecha.Date == hoy);
+        }
+
+        return await query
+            .OrderByDescending(v => v.Fecha)
+            .ThenByDescending(v => v.IdVenta)
+            .ToListAsync();
     }
 }
