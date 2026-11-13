@@ -24,7 +24,7 @@ public class Program
             .AddCookie(options =>
             {
                 options.LoginPath = "/Acceso/Login";     // A dónde redirige si no está logueado
-                options.AccessDeniedPath = "/Acceso/Login"; // Si no tiene permisos
+                options.AccessDeniedPath = "/Acceso/AccesoDenegado"; // Si no tiene permisos
                 options.ExpireTimeSpan = TimeSpan.FromHours(8);
             });
         

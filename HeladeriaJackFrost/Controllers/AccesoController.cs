@@ -17,6 +17,12 @@ public class AccesoController : Controller
     {
         _context = context;
     }
+    
+    [HttpGet]
+    public IActionResult AccesoDenegado()
+    {
+        return View();
+    }
 
     [HttpGet]
     public IActionResult Login(string? returnUrl = null)
