@@ -18,6 +18,8 @@ public partial class HeladeriaDbContext : DbContext
 
     public virtual DbSet<Compra> Compra { get; set; }
 
+    public virtual DbSet<Cuenta> Cuenta { get; set; }
+
     public virtual DbSet<Detalle> Detalle { get; set; }
 
     public virtual DbSet<Persona> Persona { get; set; }
@@ -93,6 +95,31 @@ public partial class HeladeriaDbContext : DbContext
                 .HasForeignKey(d => d.IdProveedor)
                 .OnDelete(DeleteBehavior.Restrict)
                 .HasConstraintName("fk_compra_proveedor");
+        });
+
+        modelBuilder.Entity<Cuenta>(entity =>
+        {
+            entity.HasKey(e => e.IdCuenta).HasName("cuenta_pkey");
+
+            entity.ToTable("cuenta");
+
+            entity.HasIndex(e => e.IdPersona, "cuenta_id_persona_key").IsUnique();
+
+            entity.Property(e => e.IdCuenta).HasColumnName("id_cuenta");
+            entity.Property(e => e.Contra)
+                .HasMaxLength(255)
+                .HasColumnName("contra");
+            entity.Property(e => e.Email)
+                .HasMaxLength(80)
+                .HasColumnName("email");
+            entity.Property(e => e.IdPersona).HasColumnName("id_persona");
+            entity.Property(e => e.Usuario)
+                .HasMaxLength(80)
+                .HasColumnName("usuario");
+
+            entity.HasOne(d => d.IdPersonaNavigation).WithOne(p => p.Cuenta)
+                .HasForeignKey<Cuenta>(d => d.IdPersona)
+                .HasConstraintName("fk_cuenta_persona");
         });
 
         modelBuilder.Entity<Detalle>(entity =>

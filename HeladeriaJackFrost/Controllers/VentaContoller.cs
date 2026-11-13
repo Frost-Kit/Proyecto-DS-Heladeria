@@ -1,13 +1,14 @@
-
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using HeladeriaJackFrost.Data;
 using HeladeriaJackFrost.Models;
 using HeladeriaJackFrost.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 
 namespace HeladeriaJackFrost.Controllers;
 
+[Authorize(Roles = "Administrador")]
 public class VentaController : Controller
 {
     private readonly HeladeriaDbContext _context;

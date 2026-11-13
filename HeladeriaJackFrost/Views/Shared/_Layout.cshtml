@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -56,6 +56,11 @@
                         </ul>
                     </li>
                 </ul>
+                <div class="btn-logout">
+                    <form asp-controller="Acceso" asp-action="Logout" method="post" class="form-inline">
+                        <button type="submit" class="nav-link text-dark btn btn-danger border-0 p-0">Cerrar Sesión</button>
+                    </form>
+                </div>
             </div>
         </div>
     </nav>
