@@ -14,52 +14,44 @@
 <header>
     <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
         <div class="container-fluid">
+            <!-- marca a la izquierda -->
             <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Heladeria Jack Frost</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                    aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                <ul class="navbar-nav flex-grow-1">
-                    <li class="nav-item">
-                        <a class="nav-link text-dark" asp-area="" asp-controller="Proveedor" asp-action="Index">Proveedores</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-dark" asp-area="" asp-controller="Producto" asp-action="Index">Productos</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-dark" asp-area="" asp-controller="Venta" asp-action="Index">Ventas</a>
-                    </li>
-                    
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle d-flex align-items-center gap-1" href="#" id="configDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Configuración
-                        </a>
-                        <ul class="dropdown-menu shadow-sm border-0" aria-labelledby="configDropdown">
-                            <li>
-                                <h6 class="dropdown-header text-uppercase small fw-bold">Gestión de Catálogos</h6>
-                            </li>
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2" asp-area="" asp-controller="Producto" asp-action="Index">
-                                    Productos
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2" asp-area="" asp-controller="Proveedor" asp-action="Index">
-                                    Proveedores
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item d-flex align-items-center gap-2" asp-area="" asp-controller="Venta" asp-action="Index">
-                                    Ventas
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                </ul>
+            
+            <!-- contenedor derecho para celular, hamburguesa y logout juntos -->
+            <div class="d-flex align-items-center gap-2 ms-auto d-sm-none">
                 <div class="btn-logout">
                     <form asp-controller="Acceso" asp-action="Logout" method="post" class="form-inline">
-                        <button type="submit" class="nav-link text-dark btn btn-danger border-0 p-0">Cerrar Sesión</button>
+                        <button type="submit" class="btn btn-danger d-flex align-items-center gap-2" title="Cerrar Sesión">
+                            <i class="bi bi-box-arrow-right"></i>
+                        </button>
+                    </form>
+                </div>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menuPrincipal" aria-controls="menuPrincipal"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+            </div>
+
+            <!-- menu colapsable -->
+            <div class="collapse navbar-collapse" id="menuPrincipal">
+                <ul class="navbar-nav mx-auto text-center">
+                    <li class="nav-item my-1">
+                        <a class="nav-link text-dark" asp-area="" asp-controller="Proveedor" asp-action="Index">Proveedores</a>
+                    </li>
+                    <li class="nav-item my-1">
+                        <a class="nav-link text-dark" asp-area="" asp-controller="Producto" asp-action="Index">Productos</a>
+                    </li>
+                    <li class="nav-item my-1">
+                        <a class="nav-link text-dark" asp-area="" asp-controller="Venta" asp-action="Index">Ventas</a>
+                    </li>
+                </ul>
+                
+                <!-- btn de Logout para escritorio -->
+                <div class="btn-logout d-none d-sm-flex ms-auto">
+                    <form asp-controller="Acceso" asp-action="Logout" method="post" class="form-inline">
+                        <button type="submit" class="btn btn-danger d-flex align-items-center gap-2" title="Cerrar Sesión">
+                            <i class="bi bi-box-arrow-right"></i>
+                        </button>
                     </form>
                 </div>
             </div>
