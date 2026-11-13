@@ -17,5 +17,7 @@ public partial class Persona
 
     public virtual Cliente? Cliente { get; set; }
 
+    public virtual Cuenta? Cuenta { get; set; }
+
     public virtual Personal? Personal { get; set; }
 }
