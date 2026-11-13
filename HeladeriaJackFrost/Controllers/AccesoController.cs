@@ -27,13 +27,19 @@ public class AccesoController : Controller
     [HttpGet]
     public IActionResult Login(string? returnUrl = null)
     {
+        // pal Home si esta autenticado
+        if (User.Identity != null && User.Identity.IsAuthenticated)
+        {
+            return RedirectToAction("Index", "Home");
+        }
+        
         ViewData["ReturnUrl"] = returnUrl;
         return View();
     }
     
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Login(string emailOrUser, string password, string? returnUrl = null)
+    public async Task<IActionResult> Login(string emailOrUser, string password, bool rememberMe, string? returnUrl = null)
     {
         // buscar la cuenta
         var cuenta = await _context.Cuenta
@@ -95,7 +101,18 @@ public class AccesoController : Controller
         }
 
         var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
+        
+        var authProperties = new AuthenticationProperties
+        {
+            IsPersistent = rememberMe,
+            ExpiresUtc = rememberMe ? DateTimeOffset.UtcNow.AddDays(7) : null // duracion de la cookie persistente
+        };
+
+        await HttpContext.SignInAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme, 
+            new ClaimsPrincipal(claimsIdentity), 
+            authProperties // <--- propiedades
+        );
 
         // una redireccion mas si algo salio mal
         if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
