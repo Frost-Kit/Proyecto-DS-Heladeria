@@ -18,13 +18,31 @@ public class ProveedorController : Controller
         _context = context;
     }
     
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(string buscar)
     {
-        var proveedores = await _context.Proveedor
+        var query = _context.Proveedor
             .Where(p => p.Estado != 5)
+            .AsQueryable();
+
+        if (!string.IsNullOrEmpty(buscar))
+        {
+            // Pasamos el término de búsqueda a minúsculas para compararlo con los campos también en minúsculas
+            string buscarMinuscula = buscar.ToLower();
+
+            query = query.Where(p => 
+                (!string.IsNullOrEmpty(p.Nombre) && p.Nombre.ToLower().Contains(buscarMinuscula)) || 
+                (!string.IsNullOrEmpty(p.NombreContacto) && p.NombreContacto.ToLower().Contains(buscarMinuscula)) || 
+                (!string.IsNullOrEmpty(p.Telefono) && p.Telefono.ToLower().Contains(buscarMinuscula)) || 
+                (!string.IsNullOrEmpty(p.Direccion) && p.Direccion.ToLower().Contains(buscarMinuscula))
+            );
+        }
+
+        var proveedores = await query
             .OrderBy(p => p.IdProveedor)
             .ToListAsync();
         
+        ViewData["CurrentFilter"] = buscar;
+    
         return View(proveedores);
     }
     
@@ -72,6 +90,8 @@ public class ProveedorController : Controller
         
         return View(viewModel);
     }
+    
+    
     
     // GET: Actualizar datos del proveedor
     public async Task<IActionResult> Actualizar(int idProveedor)
