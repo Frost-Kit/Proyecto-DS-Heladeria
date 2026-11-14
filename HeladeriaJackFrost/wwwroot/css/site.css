@@ -8,7 +8,11 @@ html {
   }
 }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+.btn:focus,
+.btn:active:focus,
+.btn-link.nav-link:focus,
+.form-control:focus,
+.form-check-input:focus {
   box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
 
@@ -21,12 +25,14 @@ body {
   margin-bottom: 60px;
 }
 
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
+.form-floating>.form-control-plaintext::placeholder,
+.form-floating>.form-control::placeholder {
   color: var(--bs-secondary-color);
   text-align: end;
 }
 
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
+.form-floating>.form-control-plaintext:focus::placeholder,
+.form-floating>.form-control:focus::placeholder {
   text-align: start;
 }
 
@@ -100,31 +106,45 @@ body {
 }
 
 html {
+  font-size: 14px;
   min-height: 100%;
+  background-color: var(--nav-bg);
+  /* Evita destellos blancos/claros si el SO fuerza rebote */
+  overscroll-behavior-y: none;
+  /* Bloquea el estiramiento (rubber-band) en trackpad y móvil */
   scroll-behavior: smooth;
 }
 
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
 body {
-  min-height: 100vh;
+  min-height: 100dvh;
+  /* dvh evita saltos con la barra de direcciones en celular */
   min-width: 320px;
   background-color: var(--bg-body);
   color: var(--text-main);
-
-  font-family:
-          Inter,
-          system-ui,
-          -apple-system,
-          "Segoe UI",
-          Roboto,
-          sans-serif;
-
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   line-height: 1.6;
   margin: 0;
+  /* Quitamos el margin-bottom: 60px antiguo */
+  display: flex;
+  flex-direction: column;
   -webkit-font-smoothing: antialiased;
-  overflow-x: auto;
+  overflow-x: hidden;
+  /* Evita desplazamiento lateral accidental en móvil */
+  overscroll-behavior-y: none;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   color: var(--text-main);
   font-weight: 700;
   letter-spacing: -0.4px;
@@ -434,12 +454,12 @@ a {
   vertical-align: middle;
 }
 
-.table > thead {
+.table>thead {
   background: #edf4f8;
   color: var(--text-main);
 }
 
-.table > thead th {
+.table>thead th {
   padding: 1rem;
   font-size: 0.78rem;
   font-weight: 750;
@@ -450,16 +470,16 @@ a {
   white-space: nowrap;
 }
 
-.table > tbody td {
+.table>tbody td {
   padding: 0.95rem 1rem;
   border-bottom: 1px solid #edf1f5;
 }
 
-.table > tbody > tr:last-child td {
+.table>tbody>tr:last-child td {
   border-bottom: none;
 }
 
-.table-hover > tbody > tr:hover > * {
+.table-hover>tbody>tr:hover>* {
   background-color: #f0f8fc;
 }
 
@@ -559,7 +579,7 @@ a {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  
+
 }
 
 .modal-header .modal-title {
@@ -629,12 +649,12 @@ a {
   margin-top: 0.5rem;
 }
 
-.form-floating > .form-control {
+.form-floating>.form-control {
   padding-right: 0.5rem;
   text-overflow: ellipsis;
 }
 
-.form-floating > label {
+.form-floating>label {
   font-size: 1rem;
   white-space: nowrap;
   max-width: 85%;
@@ -646,7 +666,8 @@ a {
 
 /* Fix al hamburguesa */
 .navbar-toggler {
-  border: 1px solid rgba(98, 197, 232, 0.4) !important; /* Borde sutil acentuado */
+  border: 1px solid rgba(98, 197, 232, 0.4) !important;
+  /* Borde sutil acentuado */
   border-radius: var(--radius-sm);
   padding: 0.4rem 0.6rem;
   background-color: transparent !important;
@@ -674,17 +695,23 @@ a {
    Media querys para el nav
    ========================================================================== */
 @media (max-width: 575.98px) {
-  
+
   .navbar-collapse.show,
   .navbar-collapse.collapsing {
-    background-color: rgba(22, 43, 58, 0.95);   /* Fondo semitransparente con tinte oscuro de la marca */
-    border: 1px solid rgba(98, 197, 232, 0.2);  /* Borde sutil acentuado */
-    border-radius: var(--radius-md);            /* Bordes redondeados */
-    padding: 1.25rem 1rem;                      /* Espaciado interno generoso */
-    margin-top: 0.85rem;                        /* Separación respecto a la barra superior */
-    box-shadow: var(--shadow-lg);               /* Sombra profunda para dar efecto de relieve/flotante */
+    background-color: rgba(22, 43, 58, 0.95);
+    /* Fondo semitransparente con tinte oscuro de la marca */
+    border: 1px solid rgba(98, 197, 232, 0.2);
+    /* Borde sutil acentuado */
+    border-radius: var(--radius-md);
+    /* Bordes redondeados */
+    padding: 1.25rem 1rem;
+    /* Espaciado interno generoso */
+    margin-top: 0.85rem;
+    /* Separación respecto a la barra superior */
+    box-shadow: var(--shadow-lg);
+    /* Sombra profunda para dar efecto de relieve/flotante */
   }
-  
+
   .navbar-collapse.show .navbar-nav .nav-link,
   .navbar-collapse.collapsing .navbar-nav .nav-link {
     color: #ffffff !important;
@@ -699,13 +726,13 @@ a {
 }
 
 @media (max-width: 380px) {
-  
+
   .navbar-brand {
     font-size: 1.3rem !important;
     max-width: 55%;
     word-break: break-word;
   }
-  
+
   .navbar .d-flex.align-items-center.gap-2 {
     gap: 0.35rem !important;
   }

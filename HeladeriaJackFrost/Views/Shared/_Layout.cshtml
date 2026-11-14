@@ -1,77 +1,88 @@
 ﻿<!DOCTYPE html>
 <html lang="es">
+
 <head>
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - HeladeriaJackFrost</title>
     <script type="importmap"></script>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/lib/bootstrap-icons/font/bootstrap-icons.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true"/>
-    <link rel="stylesheet" href="~/HeladeriaJackFrost.styles.css" asp-append-version="true"/>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/HeladeriaJackFrost.styles.css" asp-append-version="true" />
 </head>
+
 <body>
-<header>
-    <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-        <div class="container-fluid">
-            <!-- marca a la izquierda -->
-            <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Heladeria Jack Frost</a>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container-fluid">
+                <!-- marca a la izquierda -->
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Heladeria Jack Frost</a>
             
-            <!-- contenedor derecho para celular, hamburguesa y logout juntos -->
-            <div class="d-flex align-items-center gap-2 ms-auto d-sm-none">
-                <div class="btn-logout">
-                    <form asp-controller="Acceso" asp-action="Logout" method="post" class="form-inline">
-                        <button type="submit" class="btn btn-danger d-flex align-items-center gap-2" title="Cerrar Sesión">
-                            <i class="bi bi-box-arrow-right"></i>
-                        </button>
-                    </form>
+                <!-- contenedor derecho para celular, hamburguesa y logout juntos -->
+                <div class="d-flex align-items-center gap-2 ms-auto d-sm-none">
+                    <div class="btn-logout">
+                        <form asp-controller="Acceso" asp-action="Logout" method="post" class="form-inline">
+                            <button type="submit" class="btn btn-danger d-flex align-items-center gap-2"
+                                    title="Cerrar Sesión">
+                                <i class="bi bi-box-arrow-right"></i>
+                            </button>
+                        </form>
+                    </div>
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#menuPrincipal" aria-controls="menuPrincipal" aria-expanded="false"
+                            aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
                 </div>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menuPrincipal" aria-controls="menuPrincipal"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-            </div>
 
-            <!-- menu colapsable -->
-            <div class="collapse navbar-collapse" id="menuPrincipal">
-                <ul class="navbar-nav mx-auto text-center">
-                    <li class="nav-item my-1">
-                        <a class="nav-link text-dark" asp-area="" asp-controller="Proveedor" asp-action="Index">Proveedores</a>
-                    </li>
-                    <li class="nav-item my-1">
-                        <a class="nav-link text-dark" asp-area="" asp-controller="Producto" asp-action="Index">Productos</a>
-                    </li>
-                    <li class="nav-item my-1">
-                        <a class="nav-link text-dark" asp-area="" asp-controller="Venta" asp-action="Index">Ventas</a>
-                    </li>
-                </ul>
+                <!-- menu colapsable -->
+                <div class="collapse navbar-collapse" id="menuPrincipal">
+                    <ul class="navbar-nav me-auto ms-sm-3">
+                        <li class="nav-item my-1">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Proveedor"
+                               asp-action="Index">Proveedores</a>
+                        </li>
+                        <li class="nav-item my-1">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Producto"
+                               asp-action="Index">Productos</a>
+                        </li>
+                        <li class="nav-item my-1">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Venta"
+                               asp-action="Index">Ventas</a>
+                        </li>
+                    </ul>
                 
-                <!-- btn de Logout para escritorio -->
-                <div class="btn-logout d-none d-sm-flex ms-auto">
-                    <form asp-controller="Acceso" asp-action="Logout" method="post" class="form-inline">
-                        <button type="submit" class="btn btn-danger d-flex align-items-center gap-2" title="Cerrar Sesión">
-                            <i class="bi bi-box-arrow-right"></i>
-                        </button>
-                    </form>
+                    <!-- btn de Logout para escritorio -->
+                    <div class="btn-logout d-none d-sm-flex ms-auto">
+                        <form asp-controller="Acceso" asp-action="Logout" method="post" class="form-inline">
+                            <button type="submit" class="btn btn-danger d-flex align-items-center gap-2"
+                                    title="Cerrar Sesión">
+                                <i class="bi bi-box-arrow-right"></i>
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
-        </div>
-    </nav>
-</header>
-<div class="container mb-5 pb-3">
-    <main role="main" class="mb-5 pb-3">
-        @RenderBody()
-    </main>
-</div>
+        </nav>
+    </header>
 
-<footer class="border-top footer text-muted mt-5 py-3">
-    <div class="container">
-        &copy; 2026 - HeladeriaJackFrost - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+    <div class="container flex-grow-1 pb-4">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
     </div>
-</footer>
-<script src="~/lib/jquery/dist/jquery.min.js"></script>
-<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-<script src="~/js/site.js" asp-append-version="true"></script>
-@await RenderSectionAsync("Scripts", required: false)
+
+    <footer class="border-top footer text-muted py-3">
+        <div class="container">
+            &copy; 2026 - HeladeriaJackFrost - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
 </body>
+
 </html>
