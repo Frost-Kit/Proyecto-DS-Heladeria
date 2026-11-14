@@ -26,7 +26,6 @@ public class ProveedorController : Controller
 
         if (!string.IsNullOrEmpty(buscar))
         {
-            // Pasamos el término de búsqueda a minúsculas para compararlo con los campos también en minúsculas
             string buscarMinuscula = buscar.ToLower();
 
             query = query.Where(p => 
@@ -90,8 +89,6 @@ public class ProveedorController : Controller
         
         return View(viewModel);
     }
-    
-    
     
     // GET: Actualizar datos del proveedor
     public async Task<IActionResult> Actualizar(int idProveedor)

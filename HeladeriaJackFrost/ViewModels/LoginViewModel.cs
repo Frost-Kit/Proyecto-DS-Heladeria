@@ -4,15 +4,15 @@ namespace HeladeriaJackFrost.ViewModels;
 
 public class LoginViewModel
 {
-    [Required(ErrorMessage = "El correo o nombre de usuario es obligatorio.")]
+    [Required(ErrorMessage = "Por favor, ingresa tu correo electrónico o nombre de usuario para continuar.")]
     [Display(Name = "Correo o Usuario")]
-    public string EmailOrUser { get; set; }
+    public string EmailOrUser { get; set; } = null!;
 
-    [Required(ErrorMessage = "La contraseña es obligatoria.")]
+    [Required(ErrorMessage = "Ingresa tu contraseña para acceder al sistema.")]
     [DataType(DataType.Password)]
-    public string Password { get; set; }
+    [Display(Name = "Contraseña")]
+    public string Password { get; set; } = null!;
     
-    // talvez borrarlo...
     [Display(Name = "Recordarme")]
     public bool RememberMe { get; set; }
 }
