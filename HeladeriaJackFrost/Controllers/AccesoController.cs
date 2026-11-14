@@ -27,6 +27,8 @@ public class AccesoController : Controller
     [HttpGet]
     public IActionResult Login(string? returnUrl = null)
     {
+        if (User.Identity != null && User.Identity.IsAuthenticated && User.IsInRole("Cliente"))
+            return RedirectToAction("Index", "Cliente");
         // pal Home si esta autenticado
         if (User.Identity != null && User.Identity.IsAuthenticated)
         {
@@ -121,7 +123,7 @@ public class AccesoController : Controller
         }
     
         // aqui ha de arreglarlo mas adenlante para redireccionar al cliente a SU home o vista
-        return esPersonalActivo ? RedirectToAction("Index", "Home") : RedirectToAction("Index", "Home");
+        return esPersonalActivo ? RedirectToAction("Index", "Home") : RedirectToAction("Index", "Cliente");
     }
     
     [HttpPost]

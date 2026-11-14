@@ -38,20 +38,33 @@
 
                 <!-- menu colapsable -->
                 <div class="collapse navbar-collapse" id="menuPrincipal">
-                    <ul class="navbar-nav me-auto ms-sm-3">
-                        <li class="nav-item my-1">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Proveedor"
-                               asp-action="Index">Proveedores</a>
-                        </li>
-                        <li class="nav-item my-1">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Producto"
-                               asp-action="Index">Productos</a>
-                        </li>
-                        <li class="nav-item my-1">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Venta"
-                               asp-action="Index">Ventas</a>
-                        </li>
-                    </ul>
+                    @* Ocultar enlaces de administración si el usuario autenticado es un Cliente *@
+                    @if (!User.IsInRole("Cliente"))
+                    {
+                        <ul class="navbar-nav me-auto ms-sm-3">
+                            <li class="nav-item my-1">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Proveedor"
+                                   asp-action="Index">Proveedores</a>
+                            </li>
+                            <li class="nav-item my-1">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Producto"
+                                   asp-action="Index">Productos</a>
+                            </li>
+                            <li class="nav-item my-1">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Venta"
+                                   asp-action="Index">Ventas</a>
+                            </li>
+                        </ul>
+                    }
+                    else
+                    {
+                        <!-- Mostrar un menú alternativo para el cliente -->
+                        <ul class="navbar-nav me-auto ms-sm-3">
+                            <li class="nav-item my-1">
+                                <a class="nav-link text-dark" asp-controller="Cliente" asp-action="Index">Mi Panel</a>
+                            </li>
+                        </ul>
+                    }
                 
                     <!-- btn de Logout para escritorio -->
                     <div class="btn-logout d-none d-sm-flex ms-auto">
