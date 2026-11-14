@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HeladeriaJackFrost.Controllers
 {
-    [Authorize] // <--- Solo exige que esté autenticado; cada método controlará su rol específico
+    [Authorize]
     public class ClienteController : Controller
     {
         private readonly HeladeriaDbContext _context;
@@ -22,7 +22,7 @@ namespace HeladeriaJackFrost.Controllers
         {
             int idPersona;
 
-            // Si es Administrador y proporciona un ID de cliente por parámetro
+            // si es Administrador y proporciona un ID de cliente por parámetro
             if (User.IsInRole("Administrador") && id.HasValue)
             {
                 var clienteBuscado = await _context.Cliente
