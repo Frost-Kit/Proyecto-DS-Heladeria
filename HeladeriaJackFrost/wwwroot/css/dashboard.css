@@ -1,0 +1,55 @@
+.dashboard-wrapper .card {
+    border-radius: 0.85rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dashboard-wrapper .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1.25rem rgba(15, 23, 42, 0.08) !important;
+}
+
+/* Tarjetas KPI */
+.kpi-card {
+    border-left: 4px solid #0ea5e9 !important;
+}
+
+.kpi-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    flex-shrink: 0;
+}
+
+/* Contenedores de gráficas para evitar desbordamientos en Chart.js */
+.dashboard-wrapper .chart-container {
+    position: relative;
+    width: 100%;
+}
+
+.dashboard-wrapper .chart-lg {
+    height: 310px;
+}
+
+.dashboard-wrapper .chart-md {
+    height: 270px;
+}
+
+/* Estilo de botones de filtro temporal */
+.dashboard-wrapper .filtro-tiempo.active {
+    font-weight: 600;
+}
+
+/* Ajustes para pantallas pequeñas */
+@media (max-width: 576px) {
+    .dashboard-wrapper .chart-lg {
+        height: 260px;
+    }
+
+    .dashboard-wrapper .chart-md {
+        height: 240px;
+    }
+}
