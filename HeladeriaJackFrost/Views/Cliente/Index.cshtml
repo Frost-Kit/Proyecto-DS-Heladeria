@@ -1,7 +1,63 @@
-@model HeladeriaJackFrost.Models.Cliente
+@model IEnumerable<HeladeriaJackFrost.ViewModels.ClienteViewModel>
 
 @{
-
+    ViewData["Title"] = "Gestión de Clientes";
 }
 
-hola cliente
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-people-fill me-2 text-primary"></i>Clientes Registrados</h2>
+            <p class="text-muted small mb-0">Administra los clientes y sus puntos de fidelidad en la heladería.</p>
+        </div>
+        
+        <!-- Si el Administrador u otro rol autorizado puede crear clientes -->
+        @if (User.IsInRole("Administrador"))
+        {
+            <a asp-action="Crear" class="btn btn-primary">
+                <i class="bi bi-person-plus-fill"></i> Nuevo Cliente
+            </a>
+        }
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Nombre Completo</th>
+                    <th>Puntos</th>
+                    <th class="text-center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td class="fw-semibold">@item.Nombre @item.ApellidoPat @item.ApellidoMat</td>
+                        <td>
+                            <span class="badge bg-info text-dark">
+                                <i class="bi bi-star-fill me-1 text-warning"></i> @item.PuntosDeCliente pts
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <div class="celda-flex gap-2">
+                                <!-- Botón para que el Admin vea el Panel del Cliente -->
+                                <a asp-action="PanelCliente" asp-route-id="@item.IdCliente" class="btn btn-sm btn-outline-primary" title="Ver Panel de Cliente">
+                                    <i class="bi bi-eye-fill"></i>
+                                </a>
+
+                                @if (User.IsInRole("Administrador"))
+                                {
+                                    <a asp-action="Editar" asp-route-id="@item.IdCliente" class="btn btn-sm btn-warning" title="Editar">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </a>
+                                }
+                            </div>
+                        </td>
+                        
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

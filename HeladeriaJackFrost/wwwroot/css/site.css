@@ -437,6 +437,70 @@ a {
   box-shadow: var(--shadow-sm);
 }
 
+/* Outline Primario */
+.btn-outline-primary {
+  color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+  background-color: transparent !important;
+  transition: var(--transition-fast);
+}
+.btn-outline-primary:hover,
+.btn-outline-primary:active,
+.btn-outline-primary:focus {
+  background-color: var(--primary-color) !important;
+  color: #ffffff !important;
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 3px rgba(22, 119, 168, 0.2) !important;
+}
+
+/* Outline Éxito / Secundario (Verde Heladería) */
+.btn-outline-success {
+  color: var(--success-color) !important;
+  border-color: var(--success-color) !important;
+  background-color: transparent !important;
+  transition: var(--transition-fast);
+}
+.btn-outline-success:hover,
+.btn-outline-success:active,
+.btn-outline-success:focus {
+  background-color: var(--success-color) !important;
+  color: #ffffff !important;
+  border-color: var(--success-color) !important;
+  box-shadow: 0 0 0 3px rgba(57, 134, 108, 0.2) !important;
+}
+
+/* Outline Peligro / Alerta (Rojo) */
+.btn-outline-danger {
+  color: var(--danger-color) !important;
+  border-color: var(--danger-color) !important;
+  background-color: transparent !important;
+  transition: var(--transition-fast);
+}
+.btn-outline-danger:hover,
+.btn-outline-danger:active,
+.btn-outline-danger:focus {
+  background-color: var(--danger-color) !important;
+  color: #ffffff !important;
+  border-color: var(--danger-color) !important;
+  box-shadow: 0 0 0 3px rgba(217, 83, 101, 0.2) !important;
+}
+
+/* Outline Advertencia (Ambar / Naranja) */
+.btn-outline-warning {
+  color: var(--warning-color) !important;
+  border-color: var(--warning-color) !important;
+  background-color: transparent !important;
+  transition: var(--transition-fast);
+}
+.btn-outline-warning:hover,
+.btn-outline-warning:active,
+.btn-outline-warning:focus {
+  background-color: var(--warning-color) !important;
+  color: var(--text-main) !important;
+  border-color: var(--warning-color) !important;
+  box-shadow: 0 0 0 3px rgba(232, 162, 61, 0.2) !important;
+}
+
 /* 7. TABLAS
    ========================================================================== */
 
@@ -736,4 +800,27 @@ a {
   .navbar .d-flex.align-items-center.gap-2 {
     gap: 0.35rem !important;
   }
+}
+
+/* barra del scroll*/
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+/* Fondo de la pista (transparente para que no estorbe) */
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* El "puntero" o barra deslizante con el color primario de la heladería */
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 10px;
+  transition: background var(--transition-fast);
+}
+
+/* Al pasar el cursor sobre la barra, se vuelve del color principal de la marca */
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-color);
 }
