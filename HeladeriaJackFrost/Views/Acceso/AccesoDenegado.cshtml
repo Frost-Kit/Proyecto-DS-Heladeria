@@ -36,16 +36,14 @@
             <div class="d-grid gap-2">
                 @if (User.Identity != null && User.Identity.IsAuthenticated)
                 {
-                    @* Si es cliente, redirigir a su propio índice *@
                     @if (User.IsInRole("Cliente"))
                     {
-                        <a class="btn text-white py-2" asp-controller="Cliente" asp-action="Index" style="background-color: var(--primary-color); border-radius: var(--radius-md); font-weight: 500;">
+                        <a class="btn text-white py-2" asp-controller="Cliente" asp-action="PanelCliente" style="background-color: var(--primary-color); border-radius: var(--radius-md); font-weight: 500;">
                             Ir a mi Panel
                         </a>
                     }
                     else
                     {
-                        @* Si es personal administrativo u otro rol interno *@
                         <a class="btn text-white py-2" asp-controller="Home" asp-action="Index" style="background-color: var(--primary-color); border-radius: var(--radius-md); font-weight: 500;">
                             Volver al Inicio
                         </a>
@@ -53,14 +51,13 @@
 
                     <form asp-controller="Acceso" asp-action="Logout" method="post" class="d-grid">
                         <button type="submit" class="btn py-2 w-100" style="background-color: var(--bg-soft); color: var(--text-main); border: 1px solid var(--border-color); border-radius: var(--radius-md); font-weight: 500;">
-                            Cerrar sesión
+                            Iniciar sesión con otra cuenta
                         </button>
                     </form>
                 }
                 else
                 {
-                    @* Si el usuario NO está autenticado *@
-                    <a class="btn text-white py-2" asp-controller="" asp-action="Index" style="background-color: var(--primary-color); border-radius: var(--radius-md); font-weight: 500;">
+                    <a class="btn text-white py-2" asp-controller="Home" asp-action="Index" style="background-color: var(--primary-color); border-radius: var(--radius-md); font-weight: 500;">
                         Volver al Inicio
                     </a>
                     <a class="btn py-2" asp-controller="Acceso" asp-action="Login" style="background-color: var(--bg-soft); color: var(--text-main); border: 1px solid var(--border-color); border-radius: var(--radius-md); font-weight: 500;">

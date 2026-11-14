@@ -123,7 +123,7 @@ public class AccesoController : Controller
         }
     
         // aqui ha de arreglarlo mas adenlante para redireccionar al cliente a SU home o vista
-        return esPersonalActivo ? RedirectToAction("Index", "Home") : RedirectToAction("Index", "Cliente");
+        return esPersonalActivo ? RedirectToAction("Index", "Home") : RedirectToAction("PanelCliente", "Cliente");
     }
     
     [HttpPost]
