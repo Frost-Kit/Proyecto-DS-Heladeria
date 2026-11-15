@@ -30,8 +30,9 @@ public class ProveedorViewModel
     [Display(Name = "Dirección")]
     public string Direccion { get; set; } = null!;
     
+    // 1-4: el estado 5 (Eliminado) solo se asigna desde la acción Eliminar.
     [Required(ErrorMessage = "Debes seleccionar el estado del proveedor.")]
-    [Range(1, 5, ErrorMessage = "Selecciona un estado válido que se encuentre dentro del rango permitido.")]
+    [Range(1, 4, ErrorMessage = "Selecciona un estado válido de la lista.")]
     [Display(Name = "Estado")]
     public int Estado { get; set; }
 }
