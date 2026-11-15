@@ -11,130 +11,126 @@ namespace HeladeriaJackFrost.Controllers;
 [Authorize(Roles = "Administrador")]
 public class ProveedorController : Controller
 {
-    private readonly HeladeriaDbContext _context;
+    private const int EstadoActivo = 1;
+    private const int EstadoEliminado = 5;
 
-    public ProveedorController(HeladeriaDbContext context)
+    private readonly HeladeriaDbContext _context;
+    private readonly ILogger<ProveedorController> _logger;
+
+    public ProveedorController(HeladeriaDbContext context, ILogger<ProveedorController> logger)
     {
         _context = context;
+        _logger = logger;
     }
-    
-    public async Task<IActionResult> Index(string buscar)
+
+    // GET: /Proveedor
+    public async Task<IActionResult> Index(string? buscar)
     {
         var query = _context.Proveedor
-            .Where(p => p.Estado != 5)
-            .AsQueryable();
+            .AsNoTracking()
+            .Where(p => p.Estado != EstadoEliminado);
 
-        if (!string.IsNullOrEmpty(buscar))
+        if (!string.IsNullOrWhiteSpace(buscar))
         {
-            string buscarMinuscula = buscar.ToLower();
+            var texto = buscar.Trim().ToLower();
 
-            query = query.Where(p => 
-                (!string.IsNullOrEmpty(p.Nombre) && p.Nombre.ToLower().Contains(buscarMinuscula)) || 
-                (!string.IsNullOrEmpty(p.NombreContacto) && p.NombreContacto.ToLower().Contains(buscarMinuscula)) || 
-                (!string.IsNullOrEmpty(p.Telefono) && p.Telefono.ToLower().Contains(buscarMinuscula)) || 
-                (!string.IsNullOrEmpty(p.Direccion) && p.Direccion.ToLower().Contains(buscarMinuscula))
-            );
+            query = query.Where(p =>
+                p.Nombre.ToLower().Contains(texto) ||
+                p.NombreContacto.ToLower().Contains(texto) ||
+                p.Telefono.ToLower().Contains(texto) ||
+                p.Direccion.ToLower().Contains(texto));
         }
 
         var proveedores = await query
             .OrderBy(p => p.IdProveedor)
             .ToListAsync();
-        
+
         ViewData["CurrentFilter"] = buscar;
-    
+
         return View(proveedores);
     }
-    
-    // GET: /Proveedor/Crear
+
+    // GET: /Proveedor/Formulario          -> formulario vacío (crear)
+    // GET: /Proveedor/Formulario?id=5     -> formulario con datos (editar)
+    // Devuelve solo el parcial que se inyecta dentro del modal.
     [HttpGet]
-    public IActionResult Crear()
+    public async Task<IActionResult> Formulario(int? id)
     {
-        ViewBag.ListaEstados = new SelectList(new List<object>
+        ProveedorViewModel viewModel;
+
+        if (id is null)
         {
-            new { Id = 1, Texto = "1 - Activo" },
-            new { Id = 2, Texto = "2 - Inactivo" },
-            new { Id = 3, Texto = "3 - En Vacaciones" },
-            new { Id = 4, Texto = "4 - Suspendido" }
-        }, "Id", "Texto", 1);
-        return View();
+            viewModel = new ProveedorViewModel { Estado = EstadoActivo };
+        }
+        else
+        {
+            var proveedor = await _context.Proveedor
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.IdProveedor == id && p.Estado != EstadoEliminado);
+
+            if (proveedor == null)
+                return NotFound();
+
+            viewModel = new ProveedorViewModel
+            {
+                IdProveedor = proveedor.IdProveedor,
+                Nombre = proveedor.Nombre,
+                NombreContacto = proveedor.NombreContacto,
+                Telefono = proveedor.Telefono,
+                Direccion = proveedor.Direccion,
+                Estado = proveedor.Estado
+            };
+        }
+
+        CargarEstados();
+        return PartialView("_ProveedorForm", viewModel);
     }
-    
+
     // POST: /Proveedor/Crear
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Crear(ProveedorViewModel viewModel)
     {
-        if (ModelState.IsValid)
-        {
-            var proveedor = new Proveedor
-            {
-                Nombre = viewModel.Nombre,
-                NombreContacto = viewModel.NombreContacto,
-                Telefono = viewModel.Telefono,
-                Direccion = viewModel.Direccion,
-                Estado = 1
-            };
+        if (!ModelState.IsValid)
+            return FormularioInvalido(viewModel);
 
-            try
-            {
-                _context.Proveedor.Add(proveedor);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            catch (Exception ex)
-            {
-                ModelState.AddModelError("", "Error al guardar en la base de datos: " + ex.Message);
-            }
-        }
-        
-        return View(viewModel);
-    }
-    
-    // GET: Actualizar datos del proveedor
-    public async Task<IActionResult> Actualizar(int idProveedor)
-    {
-        var proveedorObejtivo = await  _context.Proveedor
-            .FindAsync(idProveedor);
-        
-        if (proveedorObejtivo == null)
-            return NotFound();
-        
-        ViewBag.ListaEstados = new SelectList(new List<object>
+        var proveedor = new Proveedor
         {
-            new { Id = 1, Texto = "1 - Activo" },
-            new { Id = 2, Texto = "2 - Inactivo" },
-            new { Id = 3, Texto = "3 - En Vacaciones" },
-            new { Id = 4, Texto = "4 - Suspendido" }
-        }, "Id", "Texto", proveedorObejtivo.Estado);
-        
-        var viewModel = new ProveedorViewModel
-        {
-            IdProveedor = proveedorObejtivo.IdProveedor,
-            Nombre = proveedorObejtivo.Nombre,
-            NombreContacto = proveedorObejtivo.NombreContacto,
-            Telefono = proveedorObejtivo.Telefono,
-            Direccion = proveedorObejtivo.Direccion,
-            Estado = proveedorObejtivo.Estado
+            Nombre = viewModel.Nombre,
+            NombreContacto = viewModel.NombreContacto,
+            Telefono = viewModel.Telefono,
+            Direccion = viewModel.Direccion,
+            Estado = viewModel.Estado
         };
-        return View(viewModel);
+
+        try
+        {
+            _context.Proveedor.Add(proveedor);
+            await _context.SaveChangesAsync();
+            return Json(new { ok = true });
+        }
+        catch (DbUpdateException ex)
+        {
+            _logger.LogError(ex, "Error al crear el proveedor {Nombre}", viewModel.Nombre);
+            ModelState.AddModelError(string.Empty, "No se pudo guardar el proveedor. Inténtalo nuevamente.");
+            return FormularioInvalido(viewModel);
+        }
     }
-    
-    // Post: Actualizar
+
+    // POST: /Proveedor/Actualizar
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Actualizar(ProveedorViewModel viewModel)
     {
         if (!ModelState.IsValid)
-        {
-            return View(viewModel);
-        }
+            return FormularioInvalido(viewModel);
 
         var proveedor = await _context.Proveedor
-            .FindAsync(viewModel.IdProveedor);
-        
+            .FirstOrDefaultAsync(p => p.IdProveedor == viewModel.IdProveedor && p.Estado != EstadoEliminado);
+
         if (proveedor == null)
             return NotFound();
-        
+
         proveedor.Nombre = viewModel.Nombre;
         proveedor.NombreContacto = viewModel.NombreContacto;
         proveedor.Telefono = viewModel.Telefono;
@@ -143,34 +139,52 @@ public class ProveedorController : Controller
 
         try
         {
-            _context.Proveedor.Update(proveedor);
             await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+            return Json(new { ok = true });
         }
-        catch (Exception ex)
+        catch (DbUpdateException ex)
         {
-            ModelState.AddModelError("", "Error al guardar en la base de datos: " + ex.Message);
+            _logger.LogError(ex, "Error al actualizar el proveedor {Id}", viewModel.IdProveedor);
+            ModelState.AddModelError(string.Empty, "No se pudo guardar los cambios. Inténtalo nuevamente.");
+            return FormularioInvalido(viewModel);
         }
-        
-        return RedirectToAction(nameof(Index));
     }
-    
-    // POST: Proveedor/Eliminar
+
+    // POST: /Proveedor/Eliminar  (eliminación lógica)
     [HttpPost, ActionName("Eliminar")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> EliminarConfirmed(int id)
+    public async Task<IActionResult> EliminarConfirmed(int id, string? buscar)
     {
-        var proveedor = await _context.Proveedor
-            .FindAsync(id);
-    
+        var proveedor = await _context.Proveedor.FindAsync(id);
+
         if (proveedor != null)
         {
-            proveedor.Estado = 5;
-        
-            _context.Proveedor.Update(proveedor);
+            proveedor.Estado = EstadoEliminado;
             await _context.SaveChangesAsync();
         }
-    
-        return RedirectToAction(nameof(Index));
+
+        return RedirectToAction(nameof(Index), new { buscar });
+    }
+
+    // ---------- Helpers ----------
+
+    // Devuelve el formulario con los errores (HTTP 422) para que el JS lo vuelva a pintar en el modal.
+    private IActionResult FormularioInvalido(ProveedorViewModel viewModel)
+    {
+        CargarEstados();
+        Response.StatusCode = StatusCodes.Status422UnprocessableEntity;
+        return PartialView("_ProveedorForm", viewModel);
+    }
+
+    // El estado 5 (Eliminado) no se ofrece: solo se asigna desde "Eliminar".
+    private void CargarEstados()
+    {
+        ViewBag.ListaEstados = new List<SelectListItem>
+        {
+            new("1 - Activo", "1"),
+            new("2 - Inactivo", "2"),
+            new("3 - En Vacaciones", "3"),
+            new("4 - Suspendido", "4")
+        };
     }
 }

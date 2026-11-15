@@ -1,0 +1,69 @@
+@model HeladeriaJackFrost.ViewModels.ProveedorViewModel
+
+@{
+    var esNuevo = Model.IdProveedor == 0;
+}
+
+<form id="formProveedor" method="post" asp-controller="Proveedor" asp-action="@(esNuevo ? "Crear" : "Actualizar")">
+    <div class="modal-header bg-success text-white">
+        <h5 class="modal-title">@(esNuevo ? "Registrar Nuevo Proveedor" : "Actualizar Proveedor")</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+    </div>
+
+    <div class="modal-body">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+
+        <input asp-for="IdProveedor" type="hidden" />
+
+        <div class="mb-3">
+            <label asp-for="Nombre" class="form-label">Empresa / Proveedor</label>
+            <input asp-for="Nombre" class="form-control" autocomplete="off" />
+            <span asp-validation-for="Nombre" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="NombreContacto" class="form-label">Nombre del Contacto</label>
+            <input asp-for="NombreContacto" class="form-control" autocomplete="off" />
+            <span asp-validation-for="NombreContacto" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Telefono" class="form-label">Teléfono</label>
+            <input asp-for="Telefono" class="form-control" autocomplete="off" />
+            <span asp-validation-for="Telefono" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Direccion" class="form-label">Dirección</label>
+            <input asp-for="Direccion" class="form-control" autocomplete="off" />
+            <span asp-validation-for="Direccion" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Estado" class="form-label">Estado</label>
+            <select asp-for="Estado" asp-items="(IEnumerable<SelectListItem>)ViewBag.ListaEstados" class="form-select">
+                <option value="">-- Seleccione un estado --</option>
+            </select>
+            <span asp-validation-for="Estado" class="text-danger"></span>
+        </div>
+        <small class="text-muted d-none d-sm-inline">
+            <kbd>Ctrl</kbd> + <kbd>S</kbd> guardar &middot; <kbd>Esc</kbd> cancelar
+        </small>
+    </div>
+
+    <div class="modal-footer justify-content-between">
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                <i class="bi bi-x-circle me-1"></i> Cancelar
+            </button>
+            
+            <button type="submit"
+                    class="btn btn-success"
+                    data-bs-toggle="tooltip"
+                    data-bs-placement="top"
+                    data-bs-title="Guardar (Ctrl + S)">
+                <i class="bi bi-check-circle me-1"></i> Guardar Proveedor
+            </button>
+        </div>
+    </div>
+</form>
