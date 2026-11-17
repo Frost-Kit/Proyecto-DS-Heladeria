@@ -1,6 +1,19 @@
 using System.ComponentModel.DataAnnotations;
+using HeladeriaJackFrost.Models;
 
 namespace HeladeriaJackFrost.ViewModels;
+
+public class DetalleItemViewModel
+{
+    public int IdProducto { get; set; }
+    public string NombreProducto { get; set; } = string.Empty;
+    public int Cantidad { get; set; }
+    public decimal PrecioUnitario { get; set; }
+    public decimal Descuento { get; set; }
+
+    // Propiedad calculada automáticamente por línea
+    public decimal Subtotal => Math.Max(0, (PrecioUnitario * Cantidad) - Descuento);
+}
 
 public class VentaViewModel
 {
@@ -12,17 +25,13 @@ public class VentaViewModel
     [Range(1, int.MaxValue, ErrorMessage = "Por favor, seleccione un cajero válido.")]
     public int IdPersonal { get; set; }
 
-    [Required(ErrorMessage = "Por favor, seleccione al menos un producto disponible.")]
-    [Range(1, int.MaxValue, ErrorMessage = "Por favor, elija un producto válido de la lista.")]
-    public int IdProducto { get; set; }
+    public DateTime Fecha { get; set; } = DateTime.Now;
 
-    [Required(ErrorMessage = "Por favor, indique la cantidad de unidades (mínimo 1).")]
-    [Range(1, 1000, ErrorMessage = "La cantidad debe ser un número mayor a cero (entre 1 y 1000).")]
-    public int Cantidad { get; set; } = 1;
+    public int EstadoInicial { get; set; } = (int)EstadoVenta.Completada;
 
-    [Required(ErrorMessage = "Por favor, ingrese el descuento (escriba 0 si no aplica).")]
-    [Range(0, 10000, ErrorMessage = "El descuento no puede ser negativo; ingrese 0 o un monto válido.")]
-    public decimal Descuento { get; set; } = 0;
+    // Lista dinámica del detalle de venta (Maestro-Detalle)
+    public List<DetalleItemViewModel> Detalles { get; set; } = new();
 
-    public int EstadoInicial { get; set; } = (int)HeladeriaJackFrost.Models.EstadoVenta.Completada;
+    // Cálculo automático del Total General usando LINQ
+    public decimal Total => Detalles.Sum(d => d.Subtotal);
 }

@@ -221,76 +221,241 @@
     <!-- Ventana de Diálogo Modal -->
     @await Html.PartialAsync("_ModalCrearVenta", ventaForm)
 
-    @section Scripts {
-        @{
-            await Html.RenderPartialAsync("_ValidationScriptsPartial");
-        }
-        <script>
-            const modalEl = document.getElementById('modalNuevaVenta');
-            const formVenta = document.getElementById('formNuevaVenta');
-            const selectPersonal = document.getElementById('selectPersonal');
-            const selectProducto = document.getElementById('selectProducto');
-            const inputCantidad = document.getElementById('inputCantidad');
-            const inputDescuento = document.getElementById('inputDescuento');
-            const textoTotal = document.getElementById('textoTotal');
-
-            let formularioModificado = false;
-            let enviandoFormulario = false;
-
-            // 1. Cálculo automático en tiempo real
-            function calcularTotal() {
-                const opcion = selectProducto.options[selectProducto.selectedIndex];
-                const precio = parseFloat(opcion ? opcion.getAttribute('data-precio') : 0) || 0;
-                const cantidad = parseInt(inputCantidad.value) || 0;
-                const descuento = parseFloat(inputDescuento.value) || 0;
-
-                const total = Math.max(0, (precio * cantidad) - descuento);
-                textoTotal.textContent = 'Bs. ' + total.toFixed(2);
-            }
-
-            selectProducto.addEventListener('change', calcularTotal);
-            inputCantidad.addEventListener('input', calcularTotal);
-            inputDescuento.addEventListener('input', calcularTotal);
-            calcularTotal();
-
-            // Detectar cambios para tolerancia a errores
-            formVenta.addEventListener('change', () => { formularioModificado = true; });
-            formVenta.addEventListener('input', () => { formularioModificado = true; });
-            formVenta.addEventListener('submit', () => { enviandoFormulario = true; });
-
-            // 2. Foco inicial en el primer campo al abrir el modal
-            modalEl.addEventListener('shown.bs.modal', () => {
-                selectPersonal.focus();
-            });
-
-            // 3. Tolerancia a errores: confirmar antes de descartar cambios (Esc / Cancelar / X)
-            modalEl.addEventListener('hide.bs.modal', (e) => {
-                if (formularioModificado && !enviandoFormulario) {
-                    const confirmarSalida = confirm("Tienes datos ingresados en esta venta. ¿Deseas cerrar la ventana y descartar los cambios?");
-                    if (!confirmarSalida) {
-                        e.preventDefault();
-                    }
-                }
-            });
-
-            // 4. Atajo Ctrl + S para guardar rápido cuando el modal está abierto
-            document.addEventListener('keydown', (e) => {
-                if (modalEl.classList.contains('show') && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
-                    e.preventDefault();
-                    formVenta.requestSubmit();
-                }
-            });
-
-            // Reabrir modal automáticamente si hubo errores de validación en el servidor
-            @if (abrirModal)
-                {
-                    <text>
-                            document.addEventListener('DOMContentLoaded', () => {
-                                formularioModificado = true;
-                            const modal = new bootstrap.Modal(modalEl);
-                            modal.show();
-                            });
-                    </text>
-            }
-        </script>
+   @section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+    <script>
+        const modalEl = document.getElementById('modalNuevaVenta');
+        const formVenta = document.getElementById('formNuevaVenta');
+        const selectPersonal = document.getElementById('selectPersonal');
+        const selectCliente = document.getElementById('selectCliente');
+        const selectProducto = document.getElementById('selectProducto');
+        const inputCantidad = document.getElementById('inputCantidad');
+        const inputDescuento = document.getElementById('inputDescuento');
+        const btnAgregarItem = document.getElementById('btnAgregarItem');
+        const tbodyDetalle = document.getElementById('tbodyDetalleVenta');
+        const contenedorInputs = document.getElementById('contenedorInputsDetalle');
+        const textoTotal = document.getElementById('textoTotal');
+        const contadorItems = document.getElementById('contadorItems');
+        const alertaValidacion = document.getElementById('alertaValidacionVenta');
+        const mensajeErrorCliente = document.getElementById('mensajeErrorCliente');
+
+        // Lista dinámica en memoria (recupera ítems si el servidor devolvió error)
+        let detallesEnMemoria = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+            ventaForm.Detalles.Select(d => new {
+                idProducto = d.IdProducto,
+                nombreProducto = d.NombreProducto,
+                cantidad = d.Cantidad,
+                precioUnitario = d.PrecioUnitario,
+                descuento = d.Descuento
+            })
+        ));
+
+        let formularioModificado = detallesEnMemoria.length > 0;
+        let enviandoFormulario = false;
+
+        function mostrarErrorModal(mensaje) {
+            mensajeErrorCliente.textContent = mensaje;
+            alertaValidacion.classList.remove('d-none');
+        }
+
+        function ocultarErrorModal() {
+            mensajeErrorCliente.textContent = '';
+            alertaValidacion.classList.add('d-none');
+        }
+
+        // Renderiza la tabla en memoria, genera inputs ocultos y recalcula totales
+        function renderizarDetalle() {
+            tbodyDetalle.innerHTML = '';
+            contenedorInputs.innerHTML = '';
+
+            if (detallesEnMemoria.length === 0) {
+                tbodyDetalle.innerHTML = `
+                    <tr id="filaVaciaDetalle">
+                        <td colspan="6" class="text-center text-muted py-3">
+                            Aún no hay productos agregados. Seleccione un producto y presione <strong>+ Agregar Ítem</strong>.
+                        </td>
+                    </tr>`;
+                textoTotal.textContent = 'Bs. 0.00';
+                contadorItems.textContent = '0 ítems';
+                return;
+            }
+
+            let totalGeneral = 0;
+
+            detallesEnMemoria.forEach((item, index) => {
+                const subtotal = Math.max(0, (item.precioUnitario * item.cantidad) - item.descuento);
+                totalGeneral += subtotal;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${item.nombreProducto}</td>
+                    <td class="text-center fw-semibold">${item.cantidad}</td>
+                    <td class="text-end">Bs. ${item.precioUnitario.toFixed(2)}</td>
+                    <td class="text-end text-danger">${item.descuento > 0 ? '-Bs. ' + item.descuento.toFixed(2) : 'Bs. 0.00'}</td>
+                    <td class="text-end fw-bold">Bs. ${subtotal.toFixed(2)}</td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-outline-danger btn-sm py-0 px-2" onclick="quitarItem(${index})">
+                            Quitar
+                        </button>
+                    </td>
+                `;
+                tbodyDetalle.appendChild(tr);
+
+                // Inputs ocultos para enlazar List<DetalleItemViewModel> Detalles en ASP.NET Core
+                contenedorInputs.insertAdjacentHTML('beforeend', `
+                    <input type="hidden" name="Detalles[${index}].IdProducto" value="${item.idProducto}" />
+                    <input type="hidden" name="Detalles[${index}].NombreProducto" value="${item.nombreProducto}" />
+                    <input type="hidden" name="Detalles[${index}].Cantidad" value="${item.cantidad}" />
+                    <input type="hidden" name="Detalles[${index}].PrecioUnitario" value="${item.precioUnitario}" />
+                    <input type="hidden" name="Detalles[${index}].Descuento" value="${item.descuento}" />
+                `);
+            });
+
+            textoTotal.textContent = 'Bs. ' + totalGeneral.toFixed(2);
+            contadorItems.textContent = `${detallesEnMemoria.length} ${detallesEnMemoria.length === 1 ? 'ítem' : 'ítems'}`;
+        }
+
+        // Agregar producto a la lista en memoria con validaciones
+        btnAgregarItem.addEventListener('click', () => {
+            ocultarErrorModal();
+
+            const opcion = selectProducto.options[selectProducto.selectedIndex];
+            const idProducto = parseInt(selectProducto.value) || 0;
+            const nombreProducto = opcion ? opcion.getAttribute('data-nombre') : '';
+            const precioUnitario = parseFloat(opcion ? opcion.getAttribute('data-precio') : 0) || 0;
+            const stockDisponible = parseInt(opcion ? opcion.getAttribute('data-stock') : 0) || 0;
+            const cantidad = parseInt(inputCantidad.value);
+            const descuento = parseFloat(inputDescuento.value) || 0;
+
+            if (idProducto <= 0) {
+                mostrarErrorModal('Seleccione un producto válido antes de agregarlo al detalle.');
+                selectProducto.focus();
+                return;
+            }
+
+            if (isNaN(cantidad) || cantidad <= 0) {
+                mostrarErrorModal('La cantidad debe ser un número entero mayor a cero.');
+                inputCantidad.focus();
+                return;
+            }
+
+            if (descuento < 0) {
+                mostrarErrorModal('El descuento no puede ser negativo.');
+                inputDescuento.focus();
+                return;
+            }
+
+            // Verificar si el producto ya está en la lista para acumular cantidad
+            const existente = detallesEnMemoria.find(d => d.idProducto === idProducto);
+            const cantidadTotal = (existente ? existente.cantidad : 0) + cantidad;
+
+            if (cantidadTotal > stockDisponible) {
+                mostrarErrorModal(`Stock insuficiente para "${nombreProducto}". Disponible: ${stockDisponible} u.`);
+                inputCantidad.focus();
+                return;
+            }
+
+            const subtotalEvaluado = (precioUnitario * cantidadTotal) - ((existente ? existente.descuento : 0) + descuento);
+            if (subtotalEvaluado <= 0) {
+                mostrarErrorModal('El descuento no puede igualar ni superar el subtotal del producto.');
+                inputDescuento.focus();
+                return;
+            }
+
+            if (existente) {
+                existente.cantidad = cantidadTotal;
+                existente.descuento += descuento;
+            } else {
+                detallesEnMemoria.push({
+                    idProducto,
+                    nombreProducto,
+                    cantidad,
+                    precioUnitario,
+                    descuento
+                });
+            }
+
+            formularioModificado = true;
+            renderizarDetalle();
+
+            // Limpiar controles de línea para el siguiente artículo
+            selectProducto.value = '0';
+            inputCantidad.value = '1';
+            inputDescuento.value = '0';
+            selectProducto.focus();
+        });
+
+        // Quitar producto de la lista en memoria
+        window.quitarItem = function (index) {
+            ocultarErrorModal();
+            detallesEnMemoria.splice(index, 1);
+            formularioModificado = detallesEnMemoria.length > 0;
+            renderizarDetalle();
+        };
+
+        // Validación antes de enviar el formulario (Prueba 3: bloqueo amable de venta vacía)
+        formVenta.addEventListener('submit', (e) => {
+            ocultarErrorModal();
+
+            if (!selectPersonal.value) {
+                e.preventDefault();
+                mostrarErrorModal('Por favor, seleccione el cajero en turno antes de confirmar.');
+                selectPersonal.focus();
+                return;
+            }
+
+            if (!selectCliente.value) {
+                e.preventDefault();
+                mostrarErrorModal('Por favor, seleccione un cliente antes de confirmar.');
+                selectCliente.focus();
+                return;
+            }
+
+            if (detallesEnMemoria.length === 0) {
+                e.preventDefault();
+                mostrarErrorModal('No puede confirmar una venta vacía. Agregue al menos un artículo al detalle.');
+                selectProducto.focus();
+                return;
+            }
+
+            enviandoFormulario = true;
+        });
+
+        formVenta.addEventListener('change', () => { formularioModificado = true; });
+
+        modalEl.addEventListener('shown.bs.modal', () => {
+            selectPersonal.focus();
+        });
+
+        modalEl.addEventListener('hide.bs.modal', (e) => {
+            if (formularioModificado && !enviandoFormulario) {
+                const confirmarSalida = confirm("Tienes artículos o datos cargados en esta venta. ¿Deseas cerrar y descartar los cambios?");
+                if (!confirmarSalida) {
+                    e.preventDefault();
+                }
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (modalEl.classList.contains('show') && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+                e.preventDefault();
+                formVenta.requestSubmit();
+            }
+        });
+
+        renderizarDetalle();
+
+        @if (abrirModal)
+        {
+            <text>
+                document.addEventListener('DOMContentLoaded', () => {
+                    formularioModificado = true;
+                    const modal = new bootstrap.Modal(modalEl);
+                    modal.show();
+                });
+            </text>
+        }
+    </script>
+}
