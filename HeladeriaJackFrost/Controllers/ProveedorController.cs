@@ -157,11 +157,10 @@ public class ProveedorController : Controller
     {
         var proveedor = await _context.Proveedor.FindAsync(id);
 
-        if (proveedor != null)
-        {
-            proveedor.Estado = EstadoEliminado;
-            await _context.SaveChangesAsync();
-        }
+        if (proveedor == null) return RedirectToAction(nameof(Index), new { buscar });
+        
+        proveedor.Estado = EstadoEliminado;
+        await _context.SaveChangesAsync();
 
         return RedirectToAction(nameof(Index), new { buscar });
     }

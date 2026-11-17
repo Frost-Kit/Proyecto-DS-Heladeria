@@ -4,7 +4,7 @@
     ViewData["Title"] = "Gestión de Proveedores";
     var filtroActual = ViewData["CurrentFilter"] as string;
     
-    // talves esto paralar los css, para pensar señores...
+    // talves esto para los css, para pensar señores...
     static (string Estilo, string Texto) EstadoBadge(int estado) => estado switch
     {
         1 => ("background-color: #ecfdf5; color: #047857; border: 1px solid #6ee7b7;", "Activo"),
@@ -17,165 +17,163 @@
 }
 
 <div class="container mt-4 mb-5">
-    <div class="d-flex justify-content-between align-items-center mb-3 gap-2">
-        <h2 class="mb-0 fw-bold">Lista de Proveedores</h2>
-        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalProveedor">
+    <div class="row justify-content-between align-items-center gx-3 gy-2 mb-3">
+        <h2 class="col-sm-6 mb-0 fw-bold">Proveedores</h2>
+        <button type="button" class="btn btn-success col-sm-auto" data-bs-toggle="modal" data-bs-target="#modalProveedor">
             <i class="bi bi-plus-circle me-1"></i> Registrar Nuevo Proveedor
         </button>
     </div>
 
-    <form asp-action="Index" method="get" class="row g-2 align-items-end mb-3">
-        <div class="col-md-5">
-            <label for="buscar" class="form-label">Buscar proveedor</label>
-            <input type="text"
-                   id="buscar"
-                   name="buscar"
-                   value="@filtroActual"
-                   class="form-control"
-                   placeholder="Buscar por empresa, contacto, telefono..."
-                   autocomplete="off" />
-        </div>
-        <div class="col-auto px-1">
-            <div class="d-flex h-100 gap-1">
-                <button type="submit" class="btn btn-primary w-50">
-                    <i class="bi bi-search"></i> Buscar
-                </button>
-                <a asp-action="Index" class="btn btn-secondary w-50">
+    <form id="formBuscar" class="mb-3">
+        <label for="buscar" class="col-12 form-label">Buscar proveedor</label>
+        <div class="row align-items-center g-2">
+            <div class="col-12 col-sm-6">
+                <input type="text"
+                       id="buscar"
+                       class="form-control"
+                       placeholder="Puede ingresar: empresa, contacto, telefono..."
+                       autocomplete="off"
+                       style="text-overflow: ellipsis"/>
+            </div>
+            <div class="col-auto col-sm-3 px-1">
+                <button type="button" id="btnLimpiar" class="btn btn-secondary">
                     <i class="bi bi-eraser"></i> Limpiar
-                </a>
+                </button>
             </div>
         </div>
     </form>
 
     @if (Model != null && Model.Any())
     {
-        <!-- 1. VISTA DE TARJETAS (menores a 1200px) -->
-        <div class="d-block d-xl-none">
-            <div class="row row-cols-1 row-cols-md-2 g-4">
-                @foreach (var item in Model)
-                {
-                    var (estiloBadge, textoEstado) = EstadoBadge(item.Estado);
+    <!-- 1. VISTA DE TARJETAS (menores a 1200px) -->
+    <section class="d-block d-xl-none">
+        <div class="row row-cols-1 row-cols-md-2 g-4">
+            @foreach (var item in Model)
+            {
+            var (estiloBadge, textoEstado) = EstadoBadge(item.Estado);
+            var textoBusqueda = $"{item.Nombre} {item.NombreContacto} {item.Telefono} {item.Direccion}".ToLowerInvariant();
 
-                    <div class="col">
-                        <div class="card h-100 shadow-sm border-0">
-                            <div class="card-body d-flex flex-column">
+            <div class="col" data-buscar="@textoBusqueda">
+                <article class="card h-100 shadow-sm border-0">
+                    <div class="card-body d-flex flex-column">
 
-                                <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
                                     <span class="badge bg-secondary">
                                         ID <i class="bi bi-hash"></i>@item.IdProveedor
                                     </span>
-                                    <span class="badge" style="@estiloBadge font-weight: 650; padding: 0.45rem 0.75rem; font-size: 0.8rem;">@textoEstado</span>
-                                </div>
+                            <span class="badge" style="@estiloBadge font-weight: 650; padding: 0.45rem 0.75rem; font-size: 0.8rem;">@textoEstado</span>
+                        </div>
 
-                                <h5 class="card-title fw-bold text-dark mb-3">
-                                    <i class="bi bi-building text-secondary me-1"></i>@item.Nombre
-                                </h5>
+                        <h5 class="card-title fw-bold text-dark mb-3">
+                            <i class="bi bi-building text-secondary me-1"></i>@item.Nombre
+                        </h5>
 
-                                <div class="mb-4 text-secondary small flex-grow-1">
-                                    <p class="mb-2">
-                                        <i class="bi bi-person-fill text-muted me-1"></i><strong>Contacto:</strong> @item.NombreContacto
-                                    </p>
-                                    <p class="mb-2">
-                                        <i class="bi bi-telephone-fill text-muted me-1"></i><strong>Teléfono:</strong> @(!string.IsNullOrEmpty(item.Telefono) ? item.Telefono : "N/A")
-                                    </p>
-                                    <p class="mb-0">
-                                        <i class="bi bi-geo-alt-fill text-muted me-1"></i><strong>Dirección:</strong> @(!string.IsNullOrEmpty(item.Direccion) ? item.Direccion : "N/A")
-                                    </p>
-                                </div>
+                        <div class="mb-4 text-secondary small flex-grow-1">
+                            <p class="mb-2">
+                                <i class="bi bi-person-fill text-muted me-1"></i><strong>Contacto:</strong> @item.NombreContacto
+                            </p>
+                            <p class="mb-2">
+                                <i class="bi bi-telephone-fill text-muted me-1"></i><strong>Teléfono:</strong> @(!string.IsNullOrEmpty(item.Telefono) ? item.Telefono : "N/A")
+                            </p>
+                            <p class="mb-0">
+                                <i class="bi bi-geo-alt-fill text-muted me-1"></i><strong>Dirección:</strong> @(!string.IsNullOrEmpty(item.Direccion) ? item.Direccion : "N/A")
+                            </p>
+                        </div>
 
-                                <div class="mt-auto pt-3 border-top">
-                                    <div class="d-flex gap-2">
-                                        <button type="button"
-                                                class="btn btn-sm btn-warning flex-fill d-flex align-items-center justify-content-center gap-1 text-dark fw-semibold"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#modalProveedor"
-                                                data-id="@item.IdProveedor">
-                                            <i class="bi bi-pencil-square"></i> Editar
-                                        </button>
+                        <div class="mt-auto pt-3 border-top">
+                            <div class="d-flex gap-2">
+                                <button type="button"
+                                        class="btn btn-sm btn-warning flex-fill d-flex align-items-center justify-content-center gap-1 text-dark fw-semibold"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalProveedor"
+                                        data-id="@item.IdProveedor">
+                                    <i class="bi bi-pencil-square"></i> Editar
+                                </button>
 
-                                        <button type="button"
-                                                class="btn btn-sm btn-danger flex-fill d-flex align-items-center justify-content-center gap-1 fw-semibold"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#modalEliminar"
-                                                data-id="@item.IdProveedor"
-                                                data-nombre="@item.Nombre">
-                                            <i class="bi bi-trash-fill"></i> Eliminar
-                                        </button>
-                                    </div>
-                                </div>
-
+                                <button type="button"
+                                        class="btn btn-sm btn-danger flex-fill d-flex align-items-center justify-content-center gap-1 fw-semibold"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalEliminar"
+                                        data-id="@item.IdProveedor"
+                                        data-nombre="@item.Nombre">
+                                    <i class="bi bi-trash-fill"></i> Eliminar
+                                </button>
                             </div>
                         </div>
+
                     </div>
+                </article>
+            </div>
+            }
+        </div>
+    </section>
+
+    <!-- 2. VISTA DE TABLA (desde 1200px) -->
+    <section class="d-none d-xl-block">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover shadow-sm align-middle">
+                <thead class="table-dark">
+                <tr>
+                    <th><i class="bi bi-hash me-1"></i>ID</th>
+                    <th><i class="bi bi-building me-1"></i>Empresa</th>
+                    <th><i class="bi bi-person me-1"></i>Nombre del Contacto</th>
+                    <th><i class="bi bi-telephone me-1"></i>Teléfono</th>
+                    <th><i class="bi bi-geo-alt me-1"></i>Dirección</th>
+                    <th class="text-center">Estado</th>
+                    <th class="text-center">Acciones</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var item in Model)
+                {
+                var (estiloBadge, textoEstado) = EstadoBadge(item.Estado);
+                var textoBusqueda = $"{item.Nombre} {item.NombreContacto} {item.Telefono} {item.Direccion}".ToLowerInvariant();
+
+                <tr data-buscar="@textoBusqueda">
+                    <td class="text-center fw-bold">@item.IdProveedor</td>
+                    <td class="fw-semibold">@item.Nombre</td>
+                    <td>@item.NombreContacto</td>
+                    <td>@(!string.IsNullOrEmpty(item.Telefono) ? item.Telefono : "N/A")</td>
+                    <td>@(!string.IsNullOrEmpty(item.Direccion) ? item.Direccion : "N/A")</td>
+                    <td class="text-center">
+                        <span class="badge" style="@estiloBadge font-weight: 650; padding: 0.45rem 0.75rem; font-size: 0.8rem;">@textoEstado</span>
+                    </td>
+                    <td class="text-center">
+                        <div class="d-flex justify-content-center align-items-center gap-1">
+                            <button type="button"
+                                    class="btn btn-sm btn-warning"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modalProveedor"
+                                    data-id="@item.IdProveedor"
+                                    title="Editar">
+                                <i class="bi bi-pencil-square"></i> Editar
+                            </button>
+
+                            <button type="button"
+                                    class="btn btn-sm btn-danger"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modalEliminar"
+                                    data-id="@item.IdProveedor"
+                                    data-nombre="@item.Nombre"
+                                    title="Eliminar">
+                                <i class="bi bi-trash-fill"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
                 }
-            </div>
+                </tbody>
+            </table>
         </div>
-
-        <!-- 2. VISTA DE TABLA (desde 1200px) -->
-        <div class="d-none d-xl-block">
-            <div class="table-responsive">
-                <table class="table table-striped table-hover shadow-sm align-middle">
-                    <thead class="table-dark">
-                    <tr>
-                        <th><i class="bi bi-hash me-1"></i>ID</th>
-                        <th><i class="bi bi-building me-1"></i>Empresa</th>
-                        <th><i class="bi bi-person me-1"></i>Nombre del Contacto</th>
-                        <th><i class="bi bi-telephone me-1"></i>Teléfono</th>
-                        <th><i class="bi bi-geo-alt me-1"></i>Dirección</th>
-                        <th class="text-center">Estado</th>
-                        <th class="text-center">Acciones</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    @foreach (var item in Model)
-                    {
-                        var (estiloBadge, textoEstado) = EstadoBadge(item.Estado);
-
-                        <tr>
-                            <td class="text-center fw-bold">@item.IdProveedor</td>
-                            <td class="fw-semibold">@item.Nombre</td>
-                            <td>@item.NombreContacto</td>
-                            <td>@(!string.IsNullOrEmpty(item.Telefono) ? item.Telefono : "N/A")</td>
-                            <td>@(!string.IsNullOrEmpty(item.Direccion) ? item.Direccion : "N/A")</td>
-                            <td class="text-center">
-                                <span class="badge" style="@estiloBadge font-weight: 650; padding: 0.45rem 0.75rem; font-size: 0.8rem;">@textoEstado</span>
-                            </td>
-                            <td class="text-center">
-                                <div class="d-flex justify-content-center align-items-center gap-1">
-                                    <button type="button"
-                                            class="btn btn-sm btn-warning"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#modalProveedor"
-                                            data-id="@item.IdProveedor"
-                                            title="Editar">
-                                        <i class="bi bi-pencil-square"></i> Editar
-                                    </button>
-
-                                    <button type="button"
-                                            class="btn btn-sm btn-danger"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#modalEliminar"
-                                            data-id="@item.IdProveedor"
-                                            data-nombre="@item.Nombre"
-                                            title="Eliminar">
-                                        <i class="bi bi-trash-fill"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    }
-                    </tbody>
-                </table>
-            </div>
-        </div>
+    </section>
     }
-    else
-    {
-        <div class="alert alert-light text-center text-muted py-5 shadow-sm border" role="alert">
-            <i class="bi bi-search display-6 d-block mb-3 text-secondary"></i>
-            No se encontraron proveedores que coincidan con la búsqueda.
-        </div>
-    }
+
+    <div id="alertaNoResultados"
+         class="alert alert-light text-center text-muted py-5 shadow-sm border mt-4 mt-xl-0 @(Model.Any() ? "d-none" : "")"
+         role="alert">
+        <i class="bi bi-search display-6 d-block mb-3 text-secondary"></i>
+        No se encontraron proveedores que coincidan con la búsqueda.
+    </div>
 </div>
 
 <!-- Modal dinamico Crear / Editar: su contenido (_ProveedorForm) -->
@@ -216,8 +214,7 @@
 </div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
-
+@{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     <script>
         (() => {
             const modalProveedor = document.getElementById('modalProveedor');
@@ -348,6 +345,56 @@
             // Eliminar requiere un clic (o Tab + Enter a propósito sobre "Sí, eliminar").
             modalEliminar.addEventListener('shown.bs.modal', () => {
                 modalEliminar.querySelector('.btn-secondary').focus();
+            });
+        })();
+
+        // ----- Búsqueda en vivo con debounce (300 ms) -----
+        (() => {
+            const formBuscar = document.getElementById('formBuscar');
+            const inputBuscar = document.getElementById('buscar');
+            const btnLimpiar = document.getElementById('btnLimpiar');
+            const alertaNoHay = document.getElementById('alertaNoResultados');
+            const vistaTarjetas = document.querySelector('.d-block.d-xl-none');
+            const vistaTabla = document.querySelector('.d-none.d-xl-block');
+            let timeoutId = null;
+
+            function filtrar() {
+                const texto = inputBuscar.value.trim().toLowerCase();
+                let visibles = 0;
+
+                // Tarjetas y filas comparten el atributo data-buscar
+                document.querySelectorAll('[data-buscar]').forEach(el => {
+                    const coincide = el.dataset.buscar.includes(texto);
+                    el.style.display = coincide ? '' : 'none';
+                    if (coincide) visibles++;
+                });
+
+                const hayResultados = visibles > 0;
+
+                // style.display tiene prioridad sobre las clases d-block / d-none de Bootstrap
+                if (vistaTarjetas) vistaTarjetas.style.display = hayResultados ? '' : 'none';
+                if (vistaTabla) vistaTabla.style.display = hayResultados ? '' : 'none';
+                alertaNoHay.classList.toggle('d-none', hayResultados);
+            }
+
+            // Debounce: espera 300 ms desde la última tecla
+            inputBuscar.addEventListener('input', () => {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(filtrar, 300);
+            });
+
+            // Enter o botón Buscar: filtra al instante, sin recargar la página
+            formBuscar.addEventListener('submit', (e) => {
+                e.preventDefault();
+                clearTimeout(timeoutId);
+                filtrar();
+            });
+
+            btnLimpiar.addEventListener('click', () => {
+                inputBuscar.value = '';
+                clearTimeout(timeoutId);
+                filtrar();
+                inputBuscar.focus();
             });
         })();
     </script>
