@@ -1,10 +1,10 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using HeladeriaJackFrost.Data;
 using HeladeriaJackFrost.Models;
 using HeladeriaJackFrost.ViewModels;
-using Microsoft.AspNetCore.Authorization;
 
 namespace HeladeriaJackFrost.Controllers;
 
@@ -25,42 +25,77 @@ public class VentaController : Controller
         await CargarListasDesplegables();
 
         ViewBag.SoloHoy = soloHoy;
-        ViewBag.VentaForm = new VentaViewModel { Cantidad = 1, Descuento = 0, EstadoInicial = 1 };
+        ViewBag.VentaForm = new VentaViewModel
+        {
+            Fecha = DateTime.Now,
+            EstadoInicial = (int)EstadoVenta.Completada,
+            IdCliente = ViewBag.ClienteDefectoId ?? 0
+        };
         ViewBag.AbrirModalVenta = false;
 
         return View(ventas);
     }
-    
+
     [HttpGet]
     public IActionResult Crear()
     {
-        // Si alguien entra directo por URL a /Venta/Crear, lo llevamos a Index y abrimos el modal
         TempData["AbrirModalAlCargar"] = true;
         return RedirectToAction(nameof(Index));
     }
-    
+
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Crear(VentaViewModel model)
     {
-        if (model.IdProducto <= 0)
+        // 1. Validación de lista vacía en el detalle (Prueba 3 - Validación de Borde)
+        if (model.Detalles == null || !model.Detalles.Any())
         {
-            ModelState.AddModelError("IdProducto", "Por favor, seleccione al menos un producto disponible.");
+            ModelState.AddModelError("Detalles", "Debe agregar al menos un producto al detalle antes de confirmar la venta.");
         }
+        else
+        {
+            // Validar cada línea del detalle
+            for (int i = 0; i < model.Detalles.Count; i++)
+            {
+                var item = model.Detalles[i];
+                if (item.IdProducto <= 0)
+                {
+                    ModelState.AddModelError("Detalles", $"El ítem #{i + 1} no tiene un producto válido.");
+                    break;
+                }
+                if (item.Cantidad <= 0)
+                {
+                    ModelState.AddModelError("Detalles", $"La cantidad del producto '{item.NombreProducto}' debe ser mayor a cero.");
+                    break;
+                }
+                if (item.Descuento < 0)
+                {
+                    ModelState.AddModelError("Detalles", $"El descuento de '{item.NombreProducto}' no puede ser negativo.");
+                    break;
+                }
 
-        if (model.Cantidad <= 0)
-        {
-            ModelState.AddModelError("Cantidad", "La cantidad debe ser un número válido mayor a cero.");
-        }
+                var prodDb = await _context.Producto.AsNoTracking()
+                    .FirstOrDefaultAsync(p => p.IdProducto == item.IdProducto);
 
-        var producto = await _context.Producto.FindAsync(model.IdProducto);
-        if (producto == null)
-        {
-            ModelState.AddModelError("IdProducto", "El producto seleccionado no existe o ya no está disponible.");
-        }
-        else if (producto.Stock < model.Cantidad)
-        {
-            ModelState.AddModelError("Cantidad", $"Stock insuficiente: solo quedan {producto.Stock} unidades de {producto.Nombre}.");
+                if (prodDb == null)
+                {
+                    ModelState.AddModelError("Detalles", $"El producto '{item.NombreProducto}' ya no existe en el catálogo.");
+                    break;
+                }
+
+                decimal subtotalLinea = (prodDb.Precio * item.Cantidad) - item.Descuento;
+                if (subtotalLinea <= 0)
+                {
+                    ModelState.AddModelError("Detalles", $"El descuento aplicado en '{prodDb.Nombre}' no puede igualar o superar su importe.");
+                    break;
+                }
+
+                if (prodDb.Stock < item.Cantidad)
+                {
+                    ModelState.AddModelError("Detalles", $"Stock insuficiente para '{prodDb.Nombre}': disponibles {prodDb.Stock} u., solicitadas {item.Cantidad} u.");
+                    break;
+                }
+            }
         }
 
         if (!ModelState.IsValid)
@@ -69,16 +104,70 @@ public class VentaController : Controller
             await CargarListasDesplegables();
             ViewBag.SoloHoy = false;
             ViewBag.VentaForm = model;
-            ViewBag.AbrirModalVenta = true; // Reabre el modal automáticamente con los errores
+            ViewBag.AbrirModalVenta = true; // Reabre el modal conservando los ítems cargados
             return View("Index", ventas);
         }
 
-        decimal precioUnitario = producto!.Precio;
-        decimal subtotal = (precioUnitario * model.Cantidad) - model.Descuento;
-
-        if (subtotal < 0)
+        // 2. Persistencia Atómica Maestro-Detalle mediante Transacción Explícita (NpgsqlTransaction)
+        await using var transaccion = await _context.Database.BeginTransactionAsync();
+        try
         {
-            ModelState.AddModelError("Descuento", "El descuento no puede superar el monto total de la venta.");
+            decimal totalVenta = 0m;
+            var detallesEntidad = new List<Detalle>();
+
+            foreach (var item in model.Detalles!)
+            {
+                var producto = await _context.Producto.FindAsync(item.IdProducto);
+                if (producto == null || producto.Stock < item.Cantidad)
+                {
+                    throw new InvalidOperationException($"Stock insuficiente o producto no disponible: {item.NombreProducto}");
+                }
+
+                decimal precioUnitario = producto.Precio;
+                decimal subtotal = (precioUnitario * item.Cantidad) - item.Descuento;
+                totalVenta += subtotal;
+
+                // Descontar inventario
+                producto.Stock -= item.Cantidad;
+
+                detallesEntidad.Add(new Detalle
+                {
+                    IdProducto = producto.IdProducto,
+                    Cantidad = item.Cantidad,
+                    PrecioUnitario = precioUnitario,
+                    Descuento = item.Descuento,
+                    Subtotal = subtotal
+                });
+            }
+
+            // Insertar Cabecera (El Maestro)
+            var nuevaVenta = new Venta
+            {
+                IdCliente = model.IdCliente,
+                IdPersonal = model.IdPersonal,
+                Fecha = DateTime.Now,
+                Total = totalVenta,
+                Estado = Enum.IsDefined(typeof(EstadoVenta), model.EstadoInicial)
+                    ? model.EstadoInicial
+                    : (int)EstadoVenta.Completada,
+                Detalle = detallesEntidad
+            };
+
+            _context.Venta.Add(nuevaVenta);
+            await _context.SaveChangesAsync();
+
+            // Confirmar toda la operación atómica en PostgreSQL
+            await transaccion.CommitAsync();
+
+            TempData["MensajeExito"] = $"¡Venta #{nuevaVenta.IdVenta} registrada con éxito por un total de Bs. {nuevaVenta.Total:N2}!";
+            return RedirectToAction(nameof(Index));
+        }
+        catch (Exception ex)
+        {
+            // Revertir cabecera, detalles y stock si algo falla
+            await transaccion.RollbackAsync();
+
+            ModelState.AddModelError("Detalles", $"No se pudo completar la transacción: {ex.Message}");
             var ventas = await ObtenerVentasFiltradas(false);
             await CargarListasDesplegables();
             ViewBag.SoloHoy = false;
@@ -86,37 +175,8 @@ public class VentaController : Controller
             ViewBag.AbrirModalVenta = true;
             return View("Index", ventas);
         }
-
-        var nuevaVenta = new Venta
-        {
-            IdCliente = model.IdCliente,
-            IdPersonal = model.IdPersonal,
-            Fecha = DateTime.Now,
-            Total = subtotal,
-            Estado = Enum.IsDefined(typeof(EstadoVenta), model.EstadoInicial)
-                ? model.EstadoInicial
-                : (int)EstadoVenta.Completada
-        };
-
-        var nuevoDetalle = new Detalle
-        {
-            IdVentaNavigation = nuevaVenta,
-            IdProducto = producto.IdProducto,
-            Cantidad = model.Cantidad,
-            PrecioUnitario = precioUnitario,
-            Descuento = model.Descuento,
-            Subtotal = subtotal
-        };
-
-        producto.Stock -= model.Cantidad;
-
-        _context.Venta.Add(nuevaVenta);
-        _context.Detalle.Add(nuevoDetalle);
-        await _context.SaveChangesAsync();
-
-        TempData["MensajeExito"] = $"Venta registrada exitosamente. Total cobrado: Bs. {subtotal:F2}";
-        return RedirectToAction(nameof(Index));
     }
+
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CambiarEstado(int idVenta, int nuevoEstado)
@@ -139,7 +199,6 @@ public class VentaController : Controller
             return RedirectToAction(nameof(Index));
         }
 
-        // Regla de negocio: Si pasa a Anulada (4) desde otro estado, el stock regresa al inventario
         if (nuevoEstado == (int)EstadoVenta.Anulada && estadoAnterior != (int)EstadoVenta.Anulada)
         {
             foreach (var det in venta.Detalle)
@@ -150,7 +209,6 @@ public class VentaController : Controller
                 }
             }
         }
-        // Si estaba Anulada (4) y la reactivan a otro estado, vuelve a comprometer el stock
         else if (estadoAnterior == (int)EstadoVenta.Anulada && nuevoEstado != (int)EstadoVenta.Anulada)
         {
             foreach (var det in venta.Detalle)
@@ -176,7 +234,6 @@ public class VentaController : Controller
 
     private async Task CargarListasDesplegables()
     {
-        // Solo productos con stock mayor a 0
         var productosDisponibles = await _context.Producto
             .Where(p => p.Stock > 0)
             .OrderBy(p => p.Nombre)
@@ -184,35 +241,38 @@ public class VentaController : Controller
 
         ViewBag.Productos = productosDisponibles;
 
-        // Lista de Clientes (mostrando el nombre desde Persona si existe relación, o su ID)
         var clientes = await _context.Cliente
             .Include(c => c.IdPersonaNavigation)
             .Select(c => new
             {
                 c.IdCliente,
-                NombreCompleto = c.IdPersonaNavigation != null 
-                    ? c.IdPersonaNavigation.Nombre 
+                NombreCompleto = c.IdPersonaNavigation != null
+                    ? $"{c.IdPersonaNavigation.Nombre} {c.IdPersonaNavigation.ApellidoPat}".Trim()
                     : $"Cliente #{c.IdCliente}"
             })
             .ToListAsync();
 
+        var consumidorFinal = clientes.FirstOrDefault(c =>
+            c.NombreCompleto.Contains("Consumidor Final", StringComparison.OrdinalIgnoreCase));
+        ViewBag.ClienteDefectoId = consumidorFinal?.IdCliente;
+
         ViewBag.Clientes = new SelectList(clientes, "IdCliente", "NombreCompleto");
 
-        // Lista de Personal activo (Estado == 1)
         var personal = await _context.Personal
             .Include(p => p.IdPersonaNavigation)
             .Where(p => p.Estado == 1)
             .Select(p => new
             {
                 p.IdPersonal,
-                NombreCargo = p.IdPersonaNavigation != null 
-                    ? $"{p.IdPersonaNavigation.Nombre} ({p.Cargo})" 
+                NombreCargo = p.IdPersonaNavigation != null
+                    ? $"{p.IdPersonaNavigation.Nombre} ({p.Cargo})"
                     : $"Personal #{p.IdPersonal} ({p.Cargo})"
             })
             .ToListAsync();
 
         ViewBag.Personal = new SelectList(personal, "IdPersonal", "NombreCargo");
     }
+
     private async Task<List<Venta>> ObtenerVentasFiltradas(bool soloHoy)
     {
         var query = _context.Venta
