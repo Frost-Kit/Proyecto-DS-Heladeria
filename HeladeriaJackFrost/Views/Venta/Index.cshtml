@@ -221,218 +221,187 @@
     <!-- Ventana de Diálogo Modal -->
     @await Html.PartialAsync("_ModalCrearVenta", ventaForm)
 
-   @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     <script>
         const modalEl = document.getElementById('modalNuevaVenta');
         const formVenta = document.getElementById('formNuevaVenta');
         const selectPersonal = document.getElementById('selectPersonal');
-        const selectCliente = document.getElementById('selectCliente');
         const selectProducto = document.getElementById('selectProducto');
         const inputCantidad = document.getElementById('inputCantidad');
-        const inputDescuento = document.getElementById('inputDescuento');
-        const btnAgregarItem = document.getElementById('btnAgregarItem');
-        const tbodyDetalle = document.getElementById('tbodyDetalleVenta');
-        const contenedorInputs = document.getElementById('contenedorInputsDetalle');
+        const inputPorcentajeDescuento = document.getElementById('inputPorcentajeDescuento');
+        const btnAgregarProducto = document.getElementById('btnAgregarProducto');
+        const tablaDetalleBody = document.getElementById('tablaDetalleBody');
+        const inputsOcultosDetalle = document.getElementById('inputsOcultosDetalle');
+        const textoBruto = document.getElementById('textoBruto');
+        const textoDescuento = document.getElementById('textoDescuento');
         const textoTotal = document.getElementById('textoTotal');
-        const contadorItems = document.getElementById('contadorItems');
-        const alertaValidacion = document.getElementById('alertaValidacionVenta');
-        const mensajeErrorCliente = document.getElementById('mensajeErrorCliente');
+        const errorCantidad = document.getElementById('errorCantidad');
+        const errorDescuento = document.getElementById('errorDescuento');
+        const btnConfirmarVenta = document.getElementById('btnConfirmarVenta');
 
-        // Lista dinámica en memoria (recupera ítems si el servidor devolvió error)
-        let detallesEnMemoria = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
-            ventaForm.Detalles.Select(d => new {
-                idProducto = d.IdProducto,
-                nombreProducto = d.NombreProducto,
-                cantidad = d.Cantidad,
-                precioUnitario = d.PrecioUnitario,
-                descuento = d.Descuento
-            })
-        ));
-
-        let formularioModificado = detallesEnMemoria.length > 0;
+        let detallesCarrito = [];
+        let formularioModificado = false;
         let enviandoFormulario = false;
 
-        function mostrarErrorModal(mensaje) {
-            mensajeErrorCliente.textContent = mensaje;
-            alertaValidacion.classList.remove('d-none');
+        function validarYCalcular() {
+            const opcion = selectProducto.options[selectProducto.selectedIndex];
+            const idProducto = parseInt(selectProducto.value) || 0;
+            const stockTotal = parseInt(opcion ? opcion.getAttribute('data-stock') : 0) || 0;
+
+            const yaEnCarrito = detallesCarrito
+                .filter(d => d.idProducto === idProducto)
+                .reduce((acc, d) => acc + d.cantidad, 0);
+            const stockDisponible = Math.max(0, stockTotal - yaEnCarrito);
+
+            const cantidad = parseInt(inputCantidad.value) || 0;
+            const porcentaje = parseFloat(inputPorcentajeDescuento.value);
+
+            let errorStock = false;
+            let errorDesc = false;
+
+            // 1. Validación dinámica de Stock
+            if (idProducto > 0 && cantidad > stockDisponible) {
+                inputCantidad.classList.add('is-invalid');
+                errorCantidad.textContent = `No es posible comprar más de lo que hay en stock (disponible: ${stockDisponible} u.).`;
+                errorStock = true;
+            } else if (inputCantidad.value !== '' && cantidad <= 0) {
+                inputCantidad.classList.add('is-invalid');
+                errorCantidad.textContent = 'La cantidad debe ser un número mayor a cero.';
+                errorStock = true;
+            } else {
+                inputCantidad.classList.remove('is-invalid');
+                errorCantidad.textContent = '';
+            }
+
+            // 2. Validación dinámica CR-01: Descuento entre 0% y 20%
+            if (isNaN(porcentaje) || porcentaje < 0 || porcentaje > 20) {
+                inputPorcentajeDescuento.classList.add('is-invalid');
+                errorDescuento.textContent = 'Por política de la heladería, el descuento debe estar entre 0% y un máximo de 20%.';
+                errorDesc = true;
+            } else {
+                inputPorcentajeDescuento.classList.remove('is-invalid');
+                errorDescuento.textContent = '';
+            }
+
+            btnAgregarProducto.disabled = errorStock || idProducto <= 0;
+            btnConfirmarVenta.disabled = errorStock || errorDesc;
+
+            // 3. Calcular Subtotal Bruto, Descuento y Total Final
+            let subtotalBruto = detallesCarrito.reduce((sum, item) => sum + item.subtotal, 0);
+
+            if (detallesCarrito.length === 0 && idProducto > 0 && !errorStock) {
+                const precio = parseFloat(opcion.getAttribute('data-precio')) || 0;
+                subtotalBruto = precio * Math.max(0, cantidad);
+            }
+
+            const pctValido = (!errorDesc && !isNaN(porcentaje)) ? porcentaje : 0;
+            const montoDescuento = +(subtotalBruto * (pctValido / 100)).toFixed(2);
+            const totalFinal = Math.max(0, subtotalBruto - montoDescuento);
+
+            textoBruto.textContent = 'Bs. ' + subtotalBruto.toFixed(2);
+            textoDescuento.textContent = '- Bs. ' + montoDescuento.toFixed(2);
+            textoTotal.textContent = 'Bs. ' + totalFinal.toFixed(2);
+
+            return !errorStock && !errorDesc;
         }
 
-        function ocultarErrorModal() {
-            mensajeErrorCliente.textContent = '';
-            alertaValidacion.classList.add('d-none');
-        }
+        function renderizarTablaDetalle() {
+            tablaDetalleBody.innerHTML = '';
+            inputsOcultosDetalle.innerHTML = '';
 
-        // Renderiza la tabla en memoria, genera inputs ocultos y recalcula totales
-        function renderizarDetalle() {
-            tbodyDetalle.innerHTML = '';
-            contenedorInputs.innerHTML = '';
-
-            if (detallesEnMemoria.length === 0) {
-                tbodyDetalle.innerHTML = `
-                    <tr id="filaVaciaDetalle">
-                        <td colspan="6" class="text-center text-muted py-3">
-                            Aún no hay productos agregados. Seleccione un producto y presione <strong>+ Agregar Ítem</strong>.
+            if (detallesCarrito.length === 0) {
+                tablaDetalleBody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-2 small">
+                            Seleccione un producto y presione <strong>+ Agregar</strong>.
                         </td>
                     </tr>`;
-                textoTotal.textContent = 'Bs. 0.00';
-                contadorItems.textContent = '0 ítems';
+                validarYCalcular();
                 return;
             }
 
-            let totalGeneral = 0;
-
-            detallesEnMemoria.forEach((item, index) => {
-                const subtotal = Math.max(0, (item.precioUnitario * item.cantidad) - item.descuento);
-                totalGeneral += subtotal;
-
+            detallesCarrito.forEach((item, index) => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${item.nombreProducto}</td>
-                    <td class="text-center fw-semibold">${item.cantidad}</td>
-                    <td class="text-end">Bs. ${item.precioUnitario.toFixed(2)}</td>
-                    <td class="text-end text-danger">${item.descuento > 0 ? '-Bs. ' + item.descuento.toFixed(2) : 'Bs. 0.00'}</td>
-                    <td class="text-end fw-bold">Bs. ${subtotal.toFixed(2)}</td>
+                    <td class="text-center">${item.cantidad}</td>
+                    <td class="text-end">Bs. ${item.precio.toFixed(2)}</td>
+                    <td class="text-end fw-bold">Bs. ${item.subtotal.toFixed(2)}</td>
                     <td class="text-center">
-                        <button type="button" class="btn btn-outline-danger btn-sm py-0 px-2" onclick="quitarItem(${index})">
-                            Quitar
-                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2" onclick="quitarDetalle(${index})">&times;</button>
                     </td>
                 `;
-                tbodyDetalle.appendChild(tr);
+                tablaDetalleBody.appendChild(tr);
 
-                // Inputs ocultos para enlazar List<DetalleItemViewModel> Detalles en ASP.NET Core
-                contenedorInputs.insertAdjacentHTML('beforeend', `
+                inputsOcultosDetalle.innerHTML += `
                     <input type="hidden" name="Detalles[${index}].IdProducto" value="${item.idProducto}" />
                     <input type="hidden" name="Detalles[${index}].NombreProducto" value="${item.nombreProducto}" />
                     <input type="hidden" name="Detalles[${index}].Cantidad" value="${item.cantidad}" />
-                    <input type="hidden" name="Detalles[${index}].PrecioUnitario" value="${item.precioUnitario}" />
-                    <input type="hidden" name="Detalles[${index}].Descuento" value="${item.descuento}" />
-                `);
+                    <input type="hidden" name="Detalles[${index}].Descuento" value="0" />
+                `;
             });
 
-            textoTotal.textContent = 'Bs. ' + totalGeneral.toFixed(2);
-            contadorItems.textContent = `${detallesEnMemoria.length} ${detallesEnMemoria.length === 1 ? 'ítem' : 'ítems'}`;
+            validarYCalcular();
         }
 
-        // Agregar producto a la lista en memoria con validaciones
-        btnAgregarItem.addEventListener('click', () => {
-            ocultarErrorModal();
+        function agregarProductoAlCarrito() {
+            if (!validarYCalcular()) return false;
 
             const opcion = selectProducto.options[selectProducto.selectedIndex];
             const idProducto = parseInt(selectProducto.value) || 0;
-            const nombreProducto = opcion ? opcion.getAttribute('data-nombre') : '';
-            const precioUnitario = parseFloat(opcion ? opcion.getAttribute('data-precio') : 0) || 0;
-            const stockDisponible = parseInt(opcion ? opcion.getAttribute('data-stock') : 0) || 0;
-            const cantidad = parseInt(inputCantidad.value);
-            const descuento = parseFloat(inputDescuento.value) || 0;
+            if (idProducto <= 0) return false;
 
-            if (idProducto <= 0) {
-                mostrarErrorModal('Seleccione un producto válido antes de agregarlo al detalle.');
-                selectProducto.focus();
-                return;
-            }
+            const nombreProducto = opcion.getAttribute('data-nombre');
+            const precio = parseFloat(opcion.getAttribute('data-precio')) || 0;
+            const cantidad = parseInt(inputCantidad.value) || 1;
+            const subtotal = precio * cantidad;
 
-            if (isNaN(cantidad) || cantidad <= 0) {
-                mostrarErrorModal('La cantidad debe ser un número entero mayor a cero.');
-                inputCantidad.focus();
-                return;
-            }
-
-            if (descuento < 0) {
-                mostrarErrorModal('El descuento no puede ser negativo.');
-                inputDescuento.focus();
-                return;
-            }
-
-            // Verificar si el producto ya está en la lista para acumular cantidad
-            const existente = detallesEnMemoria.find(d => d.idProducto === idProducto);
-            const cantidadTotal = (existente ? existente.cantidad : 0) + cantidad;
-
-            if (cantidadTotal > stockDisponible) {
-                mostrarErrorModal(`Stock insuficiente para "${nombreProducto}". Disponible: ${stockDisponible} u.`);
-                inputCantidad.focus();
-                return;
-            }
-
-            const subtotalEvaluado = (precioUnitario * cantidadTotal) - ((existente ? existente.descuento : 0) + descuento);
-            if (subtotalEvaluado <= 0) {
-                mostrarErrorModal('El descuento no puede igualar ni superar el subtotal del producto.');
-                inputDescuento.focus();
-                return;
-            }
-
-            if (existente) {
-                existente.cantidad = cantidadTotal;
-                existente.descuento += descuento;
-            } else {
-                detallesEnMemoria.push({
-                    idProducto,
-                    nombreProducto,
-                    cantidad,
-                    precioUnitario,
-                    descuento
-                });
-            }
-
+            detallesCarrito.push({ idProducto, nombreProducto, precio, cantidad, subtotal });
             formularioModificado = true;
-            renderizarDetalle();
 
-            // Limpiar controles de línea para el siguiente artículo
-            selectProducto.value = '0';
-            inputCantidad.value = '1';
-            inputDescuento.value = '0';
-            selectProducto.focus();
-        });
+            selectProducto.value = "0";
+            inputCantidad.value = 1;
 
-        // Quitar producto de la lista en memoria
-        window.quitarItem = function (index) {
-            ocultarErrorModal();
-            detallesEnMemoria.splice(index, 1);
-            formularioModificado = detallesEnMemoria.length > 0;
-            renderizarDetalle();
+            renderizarTablaDetalle();
+            return true;
+        }
+
+        window.quitarDetalle = function(index) {
+            detallesCarrito.splice(index, 1);
+            renderizarTablaDetalle();
         };
 
-        // Validación antes de enviar el formulario (Prueba 3: bloqueo amable de venta vacía)
+        btnAgregarProducto.addEventListener('click', agregarProductoAlCarrito);
+        selectProducto.addEventListener('change', validarYCalcular);
+        inputCantidad.addEventListener('input', validarYCalcular);
+        inputPorcentajeDescuento.addEventListener('input', validarYCalcular);
+
+        formVenta.addEventListener('change', () => { formularioModificado = true; });
+        formVenta.addEventListener('input', () => { formularioModificado = true; });
+
         formVenta.addEventListener('submit', (e) => {
-            ocultarErrorModal();
-
-            if (!selectPersonal.value) {
+            if (!validarYCalcular()) {
                 e.preventDefault();
-                mostrarErrorModal('Por favor, seleccione el cajero en turno antes de confirmar.');
-                selectPersonal.focus();
                 return;
             }
-
-            if (!selectCliente.value) {
-                e.preventDefault();
-                mostrarErrorModal('Por favor, seleccione un cliente antes de confirmar.');
-                selectCliente.focus();
-                return;
+            if (detallesCarrito.length === 0 && (parseInt(selectProducto.value) || 0) > 0) {
+                if (!agregarProductoAlCarrito()) {
+                    e.preventDefault();
+                    return;
+                }
             }
-
-            if (detallesEnMemoria.length === 0) {
-                e.preventDefault();
-                mostrarErrorModal('No puede confirmar una venta vacía. Agregue al menos un artículo al detalle.');
-                selectProducto.focus();
-                return;
-            }
-
             enviandoFormulario = true;
         });
 
-        formVenta.addEventListener('change', () => { formularioModificado = true; });
-
         modalEl.addEventListener('shown.bs.modal', () => {
             selectPersonal.focus();
+            validarYCalcular();
         });
 
         modalEl.addEventListener('hide.bs.modal', (e) => {
             if (formularioModificado && !enviandoFormulario) {
-                const confirmarSalida = confirm("Tienes artículos o datos cargados en esta venta. ¿Deseas cerrar y descartar los cambios?");
-                if (!confirmarSalida) {
+                if (!confirm("Tienes datos ingresados en esta venta. ¿Deseas cerrar la ventana y descartar los cambios?")) {
                     e.preventDefault();
                 }
             }
@@ -445,16 +414,14 @@
             }
         });
 
-        renderizarDetalle();
-
         @if (abrirModal)
         {
             <text>
-                document.addEventListener('DOMContentLoaded', () => {
-                    formularioModificado = true;
-                    const modal = new bootstrap.Modal(modalEl);
-                    modal.show();
-                });
+            document.addEventListener('DOMContentLoaded', () => {
+                formularioModificado = true;
+                const modal = new bootstrap.Modal(modalEl);
+                modal.show();
+            });
             </text>
         }
     </script>

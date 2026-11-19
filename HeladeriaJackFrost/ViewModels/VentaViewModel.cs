@@ -34,4 +34,8 @@ public class VentaViewModel
 
     // Cálculo automático del Total General usando LINQ
     public decimal Total => Detalles.Sum(d => d.Subtotal);
+    
+    //Cambio para el rango de descuento
+    [Range(0, 20, ErrorMessage = "El descuento permitido debe estar entre 0% y un máximo de 20%.")]
+    public decimal PorcentajeDescuento { get; set; } = 0;
 }
