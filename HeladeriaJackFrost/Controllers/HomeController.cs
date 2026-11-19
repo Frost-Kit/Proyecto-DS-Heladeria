@@ -23,10 +23,20 @@ public class HomeController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> DashboardDatos(CancellationToken cancellationToken)
+    public async Task<IActionResult> DashboardDatos(DateTime? fecha, CancellationToken cancellationToken)
     {
-        var hoy = DateTime.Today;
-        var manana = hoy.AddDays(1);
+        if (!ModelState.IsValid)
+        {
+            return BadRequest("La fecha seleccionada no es válida.");
+        }
+
+        var dia = fecha?.Date ?? DateTime.Today;
+        if (dia == DateTime.MaxValue.Date)
+        {
+            return BadRequest("La fecha seleccionada no es válida.");
+        }
+
+        var diaSiguiente = dia.AddDays(1);
 
         // 1. Inventario ordenado de menor a mayor stock (prioridad operativa)
         var productos = await _context.Producto
@@ -41,10 +51,10 @@ public class HomeController : Controller
             })
             .ToListAsync(cancellationToken);
 
-        // 2. Solo ventas del día actual
+        // 2. Ventas del día seleccionado
         var ventasHoy = await _context.Venta
             .AsNoTracking()
-            .Where(v => v.Fecha >= hoy && v.Fecha < manana)
+            .Where(v => v.Fecha >= dia && v.Fecha < diaSiguiente)
             .Select(v => new
             {
                 v.Total,
@@ -52,10 +62,37 @@ public class HomeController : Controller
             })
             .ToListAsync(cancellationToken);
 
-        // Total monetario excluyendo anuladas y reembolsadas
+        // Excluye anuladas y reembolsadas del total cobrado y de los descuentos.
         var ventasValidas = ventasHoy
             .Where(v => v.Estado != (int)EstadoVenta.Anulada && v.Estado != (int)EstadoVenta.Reembolsada)
             .ToList();
+
+        var descuentosPorEmpleado = await _context.Detalle
+            .AsNoTracking()
+            .Where(d => d.IdVentaNavigation.Fecha >= dia
+                     && d.IdVentaNavigation.Fecha < diaSiguiente
+                     && d.IdVentaNavigation.Estado != (int)EstadoVenta.Anulada
+                     && d.IdVentaNavigation.Estado != (int)EstadoVenta.Reembolsada
+                     && d.Descuento > 0)
+            .GroupBy(d => new
+            {
+                d.IdVentaNavigation.IdPersonal,
+                d.IdVentaNavigation.IdPersonalNavigation.IdPersonaNavigation.Nombre,
+                d.IdVentaNavigation.IdPersonalNavigation.IdPersonaNavigation.ApellidoPat,
+                d.IdVentaNavigation.IdPersonalNavigation.IdPersonaNavigation.ApellidoMat
+            })
+            .Select(g => new
+            {
+                g.Key.IdPersonal,
+                g.Key.Nombre,
+                g.Key.ApellidoPat,
+                g.Key.ApellidoMat,
+                DescuentoTotal = g.Sum(d => d.Descuento)
+            })
+            .OrderByDescending(g => g.DescuentoTotal)
+            .ThenBy(g => g.ApellidoPat)
+            .ThenBy(g => g.Nombre)
+            .ToListAsync(cancellationToken);
 
         var estadosAgrupados = ventasHoy
             .GroupBy(v => v.Estado)
@@ -74,11 +111,11 @@ public class HomeController : Controller
             })
             .ToList();
 
-        // 3. Top 5 productos más vendidos hoy (Ajusta 'DetalleVenta' y 'IdProductoNavigation' según el nombre exacto en tu DbContext)
+        // 3. Top 5 productos más vendidos en la fecha seleccionada
         var topProductosHoy = await _context.Detalle
             .AsNoTracking()
-            .Where(d => d.IdVentaNavigation.Fecha >= hoy
-                     && d.IdVentaNavigation.Fecha < manana
+            .Where(d => d.IdVentaNavigation.Fecha >= dia
+                     && d.IdVentaNavigation.Fecha < diaSiguiente
                      && d.IdVentaNavigation.Estado != (int)EstadoVenta.Anulada
                      && d.IdVentaNavigation.Estado != (int)EstadoVenta.Reembolsada)
             .GroupBy(d => d.IdProductoNavigation.Nombre)
@@ -96,9 +133,19 @@ public class HomeController : Controller
             VentasHoyTotal = ventasValidas.Sum(v => v.Total),
             VentasHoyCantidad = ventasValidas.Count,
             PedidosEnCursoHoy = ventasHoy.Count(v => v.Estado == (int)EstadoVenta.Pendiente || v.Estado == (int)EstadoVenta.EnPreparacion),
+            DescuentoTotalDia = descuentosPorEmpleado.Sum(g => g.DescuentoTotal),
             Productos = productos,
             EstadosVentasHoy = estadosAgrupados,
-            TopProductosHoy = topProductosHoy
+            TopProductosHoy = topProductosHoy,
+            DescuentosPorEmpleado = descuentosPorEmpleado
+                .Select(g => new DashboardEmpleadoDescuentoViewModel
+                {
+                    IdPersonal = g.IdPersonal,
+                    Nombre = string.Join(" ", new[] { g.Nombre, g.ApellidoPat, g.ApellidoMat }
+                        .Where(nombre => !string.IsNullOrWhiteSpace(nombre))),
+                    DescuentoTotal = g.DescuentoTotal
+                })
+                .ToList()
         };
 
         return Json(resultado);
