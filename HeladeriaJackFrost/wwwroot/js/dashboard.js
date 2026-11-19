@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const dashboard = document.querySelector(".dashboard-wrapper");
     const mensajeError = document.getElementById("dashboardError");
     const botonRecargar = document.getElementById("btnRecargarDatos");
+    const selectorFecha = document.getElementById("fechaDashboard");
 
     // Instancias de gráficas para actualizarlas sin duplicar canvas
     let charts = {};
@@ -20,17 +21,19 @@ document.addEventListener("DOMContentLoaded", () => {
         `${MONEDA} ${Number(valor || 0).toLocaleString("es-BO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
     // =========================================================================
-    // 2. ACTUALIZAR TARJETAS KPI Y TABLA DE ALERTAS DE REPOSICIÓN
+    // 2. ACTUALIZAR TARJETAS KPI Y TABLAS
     // =========================================================================
     function renderizarKPIs(datos) {
-        // KPI 1: Ventas de Hoy
+        // KPI 1: total neto cobrado
         document.getElementById("kpiVentasHoyTotal").textContent = formatearMoneda(datos.ventasHoyTotal);
         document.getElementById("kpiVentasHoyCantidad").textContent = `${datos.ventasHoyCantidad} ventas válidas`;
 
-        // KPI 2: Pedidos En Cola / Barra (Pendientes + En Preparación)
         document.getElementById("kpiPedidosEnCurso").textContent = datos.pedidosEnCursoHoy ?? 0;
+        const descuentos = datos.descuentosPorEmpleado || [];
+        document.getElementById("kpiDescuentoTotal").textContent = formatearMoneda(datos.descuentoTotalDia);
+        document.getElementById("kpiDescuentoCantidad").textContent =
+            `${descuentos.length} ${descuentos.length === 1 ? "empleado" : "empleados"}`;
 
-        // KPI 3: Stock Total y Alertas
         const productos = datos.productos || [];
         const totalStock = productos.reduce((acc, p) => acc + p.stock, 0);
         const productosCriticos = productos.filter(p => p.stock <= UMBRAL_STOCK_BAJO);
@@ -69,14 +72,58 @@ document.addEventListener("DOMContentLoaded", () => {
                 tbody.appendChild(fila);
             });
         }
+
+        const tablaDescuentos = document.getElementById("tablaDescuentosEmpleados");
+        const mayorDescuento = document.getElementById("empleadoMayorDescuento");
+        tablaDescuentos.replaceChildren();
+
+        if (descuentos.length === 0) {
+            mayorDescuento.textContent = "Sin descuentos";
+            const fila = document.createElement("tr");
+            const celda = document.createElement("td");
+            celda.colSpan = 2;
+            celda.className = "text-center text-muted py-4";
+            celda.textContent = "Sin descuentos en esta fecha";
+            fila.appendChild(celda);
+            tablaDescuentos.appendChild(fila);
+        } else {
+            const maximo = descuentos[0].descuentoTotal;
+            const empleadosConMaximo = descuentos
+                .filter(empleado => empleado.descuentoTotal === maximo)
+                .map(empleado => `${empleado.nombre} (#${empleado.idPersonal})`);
+            mayorDescuento.textContent = `Mayor descuento: ${empleadosConMaximo.join(", ")} (${formatearMoneda(maximo)})`;
+
+            descuentos.forEach(empleado => {
+                const fila = document.createElement("tr");
+                const celdaNombre = document.createElement("td");
+                celdaNombre.className = "ps-3";
+                celdaNombre.textContent = `${empleado.nombre} (#${empleado.idPersonal})`;
+                const celdaDescuento = document.createElement("td");
+                celdaDescuento.className = "text-end pe-3 fw-semibold";
+                celdaDescuento.textContent = formatearMoneda(empleado.descuentoTotal);
+                fila.append(celdaNombre, celdaDescuento);
+                tablaDescuentos.appendChild(fila);
+            });
+        }
+
+        const filaTotal = document.createElement("tr");
+        filaTotal.className = "table-light fw-bold";
+        const celdaEtiquetaTotal = document.createElement("td");
+        celdaEtiquetaTotal.className = "ps-3";
+        celdaEtiquetaTotal.textContent = "Total descontado";
+        const celdaMontoTotal = document.createElement("td");
+        celdaMontoTotal.className = "text-end pe-3";
+        celdaMontoTotal.textContent = formatearMoneda(datos.descuentoTotalDia);
+        filaTotal.append(celdaEtiquetaTotal, celdaMontoTotal);
+        tablaDescuentos.appendChild(filaTotal);
     }
 
     // =========================================================================
-    // 3. GRÁFICA PASTEL: ESTADO DE LAS VENTAS (SOLO HOY)
+    // 3. GRÁFICA PASTEL: ESTADO DE LAS VENTAS
     // =========================================================================
     function renderizarGraficaEstadoVentasHoy(estadosVentasHoy) {
         const tieneDatos = Array.isArray(estadosVentasHoy) && estadosVentasHoy.length > 0;
-        const labels = tieneDatos ? estadosVentasHoy.map(e => e.estado) : ["Sin ventas hoy"];
+        const labels = tieneDatos ? estadosVentasHoy.map(e => e.estado) : ["Sin ventas en esta fecha"];
         const valores = tieneDatos ? estadosVentasHoy.map(e => e.cantidad) : [1];
         const total = valores.reduce((a, b) => a + b, 0);
 
@@ -86,7 +133,7 @@ document.addEventListener("DOMContentLoaded", () => {
             "En Preparación": "#0ea5e9",
             "Anulada": "#64748b",
             "Reembolsada": "#ef4444",
-            "Sin ventas hoy": "#e2e8f0"
+            "Sin ventas en esta fecha": "#e2e8f0"
         };
 
         if (charts.estadoVentas) charts.estadoVentas.destroy();
@@ -109,7 +156,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     tooltip: {
                         callbacks: {
                             label: (ctx) => {
-                                if (!tieneDatos) return " Sin movimientos registrados hoy";
+                                if (!tieneDatos) return " Sin movimientos registrados en esta fecha";
                                 const pct = calcularPorcentaje(ctx.raw, total);
                                 return ` ${ctx.label}: ${ctx.raw} ventas (${pct}%)`;
                             }
@@ -121,11 +168,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // =========================================================================
-    // 4. GRÁFICA BARRAS HORIZONTALES: TOP 5 PRODUCTOS MÁS VENDIDOS HOY
+    // 4. GRÁFICA BARRAS HORIZONTALES: TOP 5 PRODUCTOS MÁS VENDIDOS
     // =========================================================================
     function renderizarGraficaTopProductosHoy(topProductosHoy) {
         const tieneDatos = Array.isArray(topProductosHoy) && topProductosHoy.length > 0;
-        const labels = tieneDatos ? topProductosHoy.map(p => p.nombre) : ["Sin ventas registradas hoy"];
+        const labels = tieneDatos ? topProductosHoy.map(p => p.nombre) : ["Sin ventas en esta fecha"];
         const cantidades = tieneDatos ? topProductosHoy.map(p => p.cantidadVendida) : [0];
 
         // Resalta el producto #1 en azul glaciar intenso y los demás en azul glaciar estándar
@@ -140,7 +187,7 @@ document.addEventListener("DOMContentLoaded", () => {
             data: {
                 labels: labels,
                 datasets: [{
-                    label: "Unidades vendidas hoy",
+                    label: "Unidades vendidas en la fecha",
                     data: cantidades,
                     backgroundColor: colores,
                     borderRadius: 6
@@ -157,7 +204,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             label: (ctx) => {
                                 if (!tieneDatos) return " 0 unidades";
                                 const extra = ctx.dataIndex === 0 ? " (MÁS PEDIDO)" : "";
-                                return ` Vendidos hoy: ${ctx.raw} uds.${extra}`;
+                                return ` Vendidos en la fecha: ${ctx.raw} uds.${extra}`;
                             }
                         }
                     }
@@ -229,15 +276,23 @@ document.addEventListener("DOMContentLoaded", () => {
     // 6. EVENTOS E INICIALIZACIÓN GENERAL
     // =========================================================================
     botonRecargar?.addEventListener("click", inicializarDashboard);
+    selectorFecha?.addEventListener("change", inicializarDashboard);
 
     async function inicializarDashboard() {
         if (!dashboard?.dataset.dashboardUrl) return;
+        if (!selectorFecha?.value) {
+            mensajeError.textContent = "Selecciona una fecha válida para consultar el dashboard.";
+            mensajeError.classList.remove("d-none");
+            return;
+        }
 
         botonRecargar.disabled = true;
         mensajeError.classList.add("d-none");
 
         try {
-            const respuesta = await fetch(dashboard.dataset.dashboardUrl, {
+            const url = new URL(dashboard.dataset.dashboardUrl, window.location.href);
+            url.searchParams.set("fecha", selectorFecha.value);
+            const respuesta = await fetch(url, {
                 headers: { "Accept": "application/json" }
             });
             if (!respuesta.ok) {
@@ -247,7 +302,8 @@ document.addEventListener("DOMContentLoaded", () => {
             const datos = await respuesta.json();
             if (!Array.isArray(datos.productos)
                 || !Array.isArray(datos.estadosVentasHoy)
-                || !Array.isArray(datos.topProductosHoy)) {
+                || !Array.isArray(datos.topProductosHoy)
+                || !Array.isArray(datos.descuentosPorEmpleado)) {
                 throw new Error("La respuesta del dashboard no tiene el formato esperado.");
             }
 
