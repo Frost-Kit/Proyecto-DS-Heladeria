@@ -262,3 +262,20 @@ INSERT INTO detalle (id_venta, id_producto, cantidad, precio_unitario, descuento
 (9, 10, 1, 85.00, 0.00, 85.00),
 (9, 1, 2, 35.00, 0.00, 70.00);
 
+
+--Agregar lo siguiente, cambios:
+-- 1. Agregar columnas para el control de descuentos en la cabecera de venta
+ALTER TABLE venta
+    ADD COLUMN subtotal_bruto NUMERIC(10, 2) NOT NULL DEFAULT 0,
+ADD COLUMN porcentaje_descuento NUMERIC(5, 2) NOT NULL DEFAULT 0,
+ADD COLUMN monto_descuento NUMERIC(10, 2) NOT NULL DEFAULT 0;
+
+-- 2. Agregar la restricción CHECK obligatoria (0% a 20%)
+ALTER TABLE venta
+    ADD CONSTRAINT chk_venta_porcentaje_descuento
+        CHECK (porcentaje_descuento >= 0 AND porcentaje_descuento <= 20);
+
+-- 3. Rellenar subtotal_bruto en ventas antiguas para mantener consistencia
+UPDATE venta
+SET subtotal_bruto = total
+WHERE subtotal_bruto = 0;

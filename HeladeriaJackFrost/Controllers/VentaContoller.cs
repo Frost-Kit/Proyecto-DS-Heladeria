@@ -29,7 +29,8 @@ public class VentaController : Controller
         {
             Fecha = DateTime.Now,
             EstadoInicial = (int)EstadoVenta.Completada,
-            IdCliente = ViewBag.ClienteDefectoId ?? 0
+            IdCliente = ViewBag.ClienteDefectoId ?? 0,
+            PorcentajeDescuento = 0 // >>> NUEVO CR-01: valor por defecto 0%
         };
         ViewBag.AbrirModalVenta = false;
 
@@ -47,7 +48,13 @@ public class VentaController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Crear(VentaViewModel model)
     {
-        // 1. Validación de lista vacía en el detalle (Prueba 3 - Validación de Borde)
+        //Validación de política de descuento (0% a 20%)
+        if (model.PorcentajeDescuento < 0 || model.PorcentajeDescuento > 20)
+        {
+            ModelState.AddModelError("PorcentajeDescuento", "El descuento permitido debe estar entre 0% y un máximo de 20%.");
+        }
+
+        // 1. Validación de lista vacía en el detalle
         if (model.Detalles == null || !model.Detalles.Any())
         {
             ModelState.AddModelError("Detalles", "Debe agregar al menos un producto al detalle antes de confirmar la venta.");
@@ -68,11 +75,6 @@ public class VentaController : Controller
                     ModelState.AddModelError("Detalles", $"La cantidad del producto '{item.NombreProducto}' debe ser mayor a cero.");
                     break;
                 }
-                if (item.Descuento < 0)
-                {
-                    ModelState.AddModelError("Detalles", $"El descuento de '{item.NombreProducto}' no puede ser negativo.");
-                    break;
-                }
 
                 var prodDb = await _context.Producto.AsNoTracking()
                     .FirstOrDefaultAsync(p => p.IdProducto == item.IdProducto);
@@ -83,16 +85,9 @@ public class VentaController : Controller
                     break;
                 }
 
-                decimal subtotalLinea = (prodDb.Precio * item.Cantidad) - item.Descuento;
-                if (subtotalLinea <= 0)
-                {
-                    ModelState.AddModelError("Detalles", $"El descuento aplicado en '{prodDb.Nombre}' no puede igualar o superar su importe.");
-                    break;
-                }
-
                 if (prodDb.Stock < item.Cantidad)
                 {
-                    ModelState.AddModelError("Detalles", $"Stock insuficiente para '{prodDb.Nombre}': disponibles {prodDb.Stock} u., solicitadas {item.Cantidad} u.");
+                    ModelState.AddModelError("Detalles", $"No es posible comprar más de lo que hay en stock para '{prodDb.Nombre}' (disponible: {prodDb.Stock} u.).");
                     break;
                 }
             }
@@ -112,7 +107,6 @@ public class VentaController : Controller
         await using var transaccion = await _context.Database.BeginTransactionAsync();
         try
         {
-            decimal totalVenta = 0m;
             var detallesEntidad = new List<Detalle>();
 
             foreach (var item in model.Detalles!)
@@ -124,8 +118,7 @@ public class VentaController : Controller
                 }
 
                 decimal precioUnitario = producto.Precio;
-                decimal subtotal = (precioUnitario * item.Cantidad) - item.Descuento;
-                totalVenta += subtotal;
+                decimal subtotalLinea = precioUnitario * item.Cantidad;
 
                 // Descontar inventario
                 producto.Stock -= item.Cantidad;
@@ -135,8 +128,8 @@ public class VentaController : Controller
                     IdProducto = producto.IdProducto,
                     Cantidad = item.Cantidad,
                     PrecioUnitario = precioUnitario,
-                    Descuento = item.Descuento,
-                    Subtotal = subtotal
+                    Descuento = 0, // >>> NUEVO CR-01: el descuento se aplica al total de la venta
+                    Subtotal = subtotalLinea
                 });
             }
 
@@ -146,12 +139,15 @@ public class VentaController : Controller
                 IdCliente = model.IdCliente,
                 IdPersonal = model.IdPersonal,
                 Fecha = DateTime.Now,
-                Total = totalVenta,
                 Estado = Enum.IsDefined(typeof(EstadoVenta), model.EstadoInicial)
                     ? model.EstadoInicial
                     : (int)EstadoVenta.Completada,
                 Detalle = detallesEntidad
             };
+
+            //Encapsulación de regla de negocio en Models/Venta.cs
+            // Calcula SubtotalBruto, MontoDescuento y Total, o lanza ArgumentOutOfRangeException si > 20% o < 0%
+            nuevaVenta.AplicarDescuento(model.PorcentajeDescuento);
 
             _context.Venta.Add(nuevaVenta);
             await _context.SaveChangesAsync();
@@ -159,8 +155,22 @@ public class VentaController : Controller
             // Confirmar toda la operación atómica en PostgreSQL
             await transaccion.CommitAsync();
 
-            TempData["MensajeExito"] = $"¡Venta #{nuevaVenta.IdVenta} registrada con éxito por un total de Bs. {nuevaVenta.Total:N2}!";
+            // Mensaje de éxito mostrando el descuento aplicado
+            TempData["MensajeExito"] = $"¡Venta #{nuevaVenta.IdVenta} registrada con éxito! Total: Bs. {nuevaVenta.Total:N2} (Descuento: {nuevaVenta.PorcentajeDescuento}%).";
             return RedirectToAction(nameof(Index));
+        }
+        // >>> NUEVO CR-01: Captura específica de la excepción del dominio (mensaje no punitivo)
+        catch (ArgumentOutOfRangeException ex)
+        {
+            await transaccion.RollbackAsync();
+
+            ModelState.AddModelError("PorcentajeDescuento", ex.Message);
+            var ventas = await ObtenerVentasFiltradas(false);
+            await CargarListasDesplegables();
+            ViewBag.SoloHoy = false;
+            ViewBag.VentaForm = model;
+            ViewBag.AbrirModalVenta = true;
+            return View("Index", ventas);
         }
         catch (Exception ex)
         {

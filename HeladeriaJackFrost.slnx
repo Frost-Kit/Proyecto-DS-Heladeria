@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="HeladeriaJackFrost.Tests/HeladeriaJackFrost.Tests.csproj" />
   <Project Path="HeladeriaJackFrost/HeladeriaJackFrost.csproj" />
 </Solution>
