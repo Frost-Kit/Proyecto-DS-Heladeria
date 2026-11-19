@@ -5,9 +5,11 @@ public class DashboardViewModel
     public decimal VentasHoyTotal { get; set; }
     public int VentasHoyCantidad { get; set; }
     public int PedidosEnCursoHoy { get; set; }
+    public decimal DescuentoTotalDia { get; set; }
     public List<DashboardProductoViewModel> Productos { get; set; } = [];
     public List<DashboardEstadoVentaViewModel> EstadosVentasHoy { get; set; } = [];
     public List<DashboardTopProductoViewModel> TopProductosHoy { get; set; } = [];
+    public List<DashboardEmpleadoDescuentoViewModel> DescuentosPorEmpleado { get; set; } = [];
 }
 
 public class DashboardProductoViewModel
@@ -27,4 +29,11 @@ public class DashboardTopProductoViewModel
 {
     public string Nombre { get; set; } = string.Empty;
     public int CantidadVendida { get; set; }
+}
+
+public class DashboardEmpleadoDescuentoViewModel
+{
+    public int IdPersonal { get; set; }
+    public string Nombre { get; set; } = string.Empty;
+    public decimal DescuentoTotal { get; set; }
 }
