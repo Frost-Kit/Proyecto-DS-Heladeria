@@ -41,6 +41,7 @@ public class HomeController : Controller
         // 1. Inventario ordenado de menor a mayor stock (prioridad operativa)
         var productos = await _context.Producto
             .AsNoTracking()
+            .Where(p => p.Estado != 5)
             .OrderBy(p => p.Stock)
             .ThenBy(p => p.Nombre)
             .Select(p => new DashboardProductoViewModel
