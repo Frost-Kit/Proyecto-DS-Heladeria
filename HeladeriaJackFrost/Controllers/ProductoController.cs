@@ -12,6 +12,9 @@ namespace HeladeriaJackFrost.Controllers;
 [Authorize(Roles = "Administrador")]
 public class ProductoController : Controller
 {
+    private const int EstadoActivo = 1;
+    private const int EstadoEliminado = 5;
+
     private readonly HeladeriaDbContext _context;
 
     public ProductoController(HeladeriaDbContext context)
@@ -19,7 +22,7 @@ public class ProductoController : Controller
         _context = context;
     }
 
-    public async Task<IActionResult> Index(int? idCategoria)
+    public async Task<IActionResult> Index(int? idCategoria, bool mostrarEliminados = false)
     {
         var categorias = await _context.Categoria
             .OrderBy(c => c.Nombre)
@@ -27,6 +30,9 @@ public class ProductoController : Controller
 
         var consulta = _context.Producto
             .Include(p => p.IdCategoriaNavigation)
+            .Where(p => mostrarEliminados
+                ? p.Estado == EstadoEliminado
+                : p.Estado != EstadoEliminado)
             .AsQueryable();
 
         if (idCategoria.HasValue
@@ -44,7 +50,8 @@ public class ProductoController : Controller
                 Categoria = p.IdCategoriaNavigation.Nombre,
                 Nombre = p.Nombre,
                 Precio = p.Precio,
-                Stock = p.Stock
+                Stock = p.Stock,
+                Estado = p.Estado
             })
             .ToListAsync();
 
@@ -53,6 +60,7 @@ public class ProductoController : Controller
             nameof(Categoria.IdCategoria),
             nameof(Categoria.Nombre),
             ViewBag.IdCategoriaSeleccionada);
+        ViewBag.MostrarEliminados = mostrarEliminados;
 
         return View(productos);
     }
@@ -85,7 +93,8 @@ public class ProductoController : Controller
             Nombre = viewModel.Nombre,
             Precio = viewModel.Precio,
             Stock = viewModel.Stock,
-            IdCategoria = viewModel.IdCategoria
+            IdCategoria = viewModel.IdCategoria,
+            Estado = EstadoActivo
         };
 
         try
@@ -108,7 +117,7 @@ public class ProductoController : Controller
     {
         var producto = await _context.Producto.FindAsync(id);
 
-        if (producto == null)
+        if (producto == null || producto.Estado == EstadoEliminado)
             return NotFound();
 
         var viewModel = new ProductoViewModel
@@ -130,7 +139,7 @@ public class ProductoController : Controller
     {
         var producto = await _context.Producto.FindAsync(viewModel.ID_Producto);
 
-        if (producto == null)
+        if (producto == null || producto.Estado == EstadoEliminado)
             return NotFound();
 
         if (!string.Equals(viewModel.Nombre, producto.Nombre, StringComparison.Ordinal)
@@ -174,7 +183,7 @@ public class ProductoController : Controller
             .Include(p => p.IdCategoriaNavigation)
             .FirstOrDefaultAsync(p => p.IdProducto == id);
 
-        if (producto == null)
+        if (producto == null || producto.Estado == EstadoEliminado)
             return NotFound();
 
         return View(new ProductoViewModel
@@ -193,31 +202,47 @@ public class ProductoController : Controller
     {
         var producto = await _context.Producto.FindAsync(id);
 
-        if (producto == null)
+        if (producto == null || producto.Estado == EstadoEliminado)
             return NotFound();
-
-        var tieneCompras = await _context.Compra.AnyAsync(c => c.IdProducto == id);
-        var tieneVentas = await _context.Detalle.AnyAsync(d => d.IdProducto == id);
-
-        if (tieneCompras || tieneVentas)
-        {
-            ModelState.AddModelError(string.Empty,
-                "No se puede eliminar este producto porque está asociado a compras o ventas registradas.");
-            return View("Eliminar", await ObtenerProductoViewModel(id));
-        }
 
         try
         {
-            _context.Producto.Remove(producto);
+            producto.Estado = EstadoEliminado;
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
         catch (DbUpdateException)
         {
             ModelState.AddModelError(string.Empty,
-                "No se pudo eliminar el producto porque tiene registros relacionados o ocurrió un error al guardar.");
+                "No se pudo retirar el producto del catálogo. Inténtelo nuevamente.");
             return View("Eliminar", await ObtenerProductoViewModel(id));
         }
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Reactivar(int id)
+    {
+        var producto = await _context.Producto
+            .FirstOrDefaultAsync(p =>
+                p.IdProducto == id && p.Estado == EstadoEliminado);
+
+        if (producto == null)
+            return NotFound();
+
+        try
+        {
+            producto.Estado = EstadoActivo;
+            await _context.SaveChangesAsync();
+            TempData["MensajeExito"] = $"El producto \"{producto.Nombre}\" volvió al catálogo.";
+        }
+        catch (DbUpdateException)
+        {
+            TempData["MensajeError"] =
+                "No se pudo reactivar el producto. Inténtelo nuevamente.";
+        }
+
+        return RedirectToAction(nameof(Index), new { mostrarEliminados = true });
     }
 
     private async Task ValidarCategoria(int idCategoria)
