@@ -212,6 +212,9 @@ public partial class HeladeriaDbContext : DbContext
                 .HasPrecision(10, 2)
                 .HasColumnName("precio");
             entity.Property(e => e.Stock).HasColumnName("stock");
+            entity.Property(e => e.Estado)
+                .HasDefaultValue(1)
+                .HasColumnName("estado");
 
             entity.HasOne(d => d.IdCategoriaNavigation).WithMany(p => p.Producto)
                 .HasForeignKey(d => d.IdCategoria)

@@ -34,6 +34,7 @@ CREATE TABLE producto (
     nombre VARCHAR(100) NOT NULL UNIQUE,
     precio NUMERIC(10, 2) NOT NULL CHECK (precio > 0),
     stock INT NOT NULL DEFAULT 0 CHECK (stock >= 0),
+    estado INT NOT NULL DEFAULT 1,
     CONSTRAINT fk_producto_categoria
         FOREIGN KEY (id_categoria) REFERENCES categoria (id_categoria)
         ON UPDATE CASCADE ON DELETE RESTRICT
@@ -279,3 +280,29 @@ ALTER TABLE venta
 UPDATE venta
 SET subtotal_bruto = total
 WHERE subtotal_bruto = 0;
+
+
+-- =============================================================
+-- ACTUALIZACION DE BASES EXISTENTES: ELIMINACION LOGICA
+-- =============================================================
+-- La aplicacion verifica y agrega automaticamente producto.estado
+-- al iniciar. Por lo tanto, no es necesario ejecutar SQL por cada
+-- producto que se retire o reactive desde el catalogo.
+--
+-- Tutorial manual (solo si la aplicacion no tiene permisos de ALTER):
+-- Paso 1: En pgAdmin o psql, conectese a la misma base que usa
+--         ConnectionStrings:DefaultConnection en appsettings.
+-- Paso 2: Abra Query Tool (pgAdmin) o la consola SQL (psql).
+-- Paso 3: Agregue la columna. IF NOT EXISTS permite ejecutar el paso
+--         aunque la aplicacion ya haya aplicado el cambio.
+ALTER TABLE producto
+    ADD COLUMN IF NOT EXISTS estado INT NOT NULL DEFAULT 1;
+-- Paso 4: Confirme que los registros tengan estado.
+SELECT id_producto, nombre, estado
+FROM producto
+ORDER BY id_producto;
+--
+-- "Eliminar" en la aplicacion marca Estado=5 y conserva las compras
+-- y ventas. Active "Mostrar productos retirados" en el catalogo para
+-- reactivar un producto desde la aplicacion. No ejecute UPDATE manuales
+-- para retirar o reactivar productos en el uso normal.

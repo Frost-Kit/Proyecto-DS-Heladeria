@@ -3,12 +3,13 @@ using HeladeriaJackFrost.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace HeladeriaJackFrost;
 
 public class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
 
@@ -50,13 +51,27 @@ public class Program
         /* --- para dar almenos dos cuentas de prueba ---
             analizar si esto es una buena practica XD...
         */
-        using (var scope = app.Services.CreateScope())
+        await using (var scope = app.Services.CreateAsyncScope())
         {
             var services = scope.ServiceProvider;
             var context = services.GetRequiredService<HeladeriaDbContext>();
 
+            try
+            {
+                await context.Database.ExecuteSqlRawAsync("""
+                    ALTER TABLE producto
+                        ADD COLUMN IF NOT EXISTS estado integer NOT NULL DEFAULT 1;
+                    """);
+            }
+            catch (PostgresException ex)
+            {
+                throw new InvalidOperationException(
+                    "No se pudo preparar la columna producto.estado. Verifique que exista la tabla producto y que el usuario de la base de datos tenga permisos para modificar su esquema.",
+                    ex);
+            }
+
             // si la tabla cuenta está vacía, la poblamos
-            if (!context.Cuenta.Any())
+            if (!await context.Cuenta.AnyAsync())
             {
                 var passwordHasher = new PasswordHasher<string>();
                 // genera un hash compatible con ASP.NET Core para "123456"
@@ -69,11 +84,11 @@ public class Program
                 };
 
                 context.Cuenta.AddRange(cuentasIniciales);
-                context.SaveChanges();
+                await context.SaveChangesAsync();
             }
         }
         /* -------------------------------------------------------- */
         
-        app.Run();
+        await app.RunAsync();
     }
 }

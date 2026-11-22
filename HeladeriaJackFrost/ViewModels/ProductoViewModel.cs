@@ -21,6 +21,8 @@ public class ProductoViewModel
     [Range(0, int.MaxValue, ErrorMessage = "El stock no puede ser negativo.")]
     public int Stock { get; set; }
 
+    public int Estado { get; set; }
+
     [Range(1, int.MaxValue, ErrorMessage = "Seleccione una categoría.")]
     public int IdCategoria { get; set; } = 0;
 }

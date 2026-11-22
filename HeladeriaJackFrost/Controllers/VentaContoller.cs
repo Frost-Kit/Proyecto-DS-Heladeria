@@ -77,7 +77,7 @@ public class VentaController : Controller
                 }
 
                 var prodDb = await _context.Producto.AsNoTracking()
-                    .FirstOrDefaultAsync(p => p.IdProducto == item.IdProducto);
+                    .FirstOrDefaultAsync(p => p.IdProducto == item.IdProducto && p.Estado != 5);
 
                 if (prodDb == null)
                 {
@@ -112,7 +112,7 @@ public class VentaController : Controller
             foreach (var item in model.Detalles!)
             {
                 var producto = await _context.Producto.FindAsync(item.IdProducto);
-                if (producto == null || producto.Stock < item.Cantidad)
+                if (producto == null || producto.Estado == 5 || producto.Stock < item.Cantidad)
                 {
                     throw new InvalidOperationException($"Stock insuficiente o producto no disponible: {item.NombreProducto}");
                 }
@@ -225,6 +225,12 @@ public class VentaController : Controller
             {
                 if (det.IdProductoNavigation != null)
                 {
+                    if (det.IdProductoNavigation.Estado == 5)
+                    {
+                        TempData["MensajeError"] = $"No se puede reactivar la venta #{idVenta}: el producto {det.IdProductoNavigation.Nombre} fue retirado del catálogo.";
+                        return RedirectToAction(nameof(Index));
+                    }
+
                     if (det.IdProductoNavigation.Stock < det.Cantidad)
                     {
                         TempData["MensajeError"] = $"No se puede reactivar la venta #{idVenta}: stock insuficiente de {det.IdProductoNavigation.Nombre}.";
@@ -245,7 +251,7 @@ public class VentaController : Controller
     private async Task CargarListasDesplegables()
     {
         var productosDisponibles = await _context.Producto
-            .Where(p => p.Stock > 0)
+            .Where(p => p.Estado != 5 && p.Stock > 0)
             .OrderBy(p => p.Nombre)
             .ToListAsync();
 
