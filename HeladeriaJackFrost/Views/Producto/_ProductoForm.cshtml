@@ -1,0 +1,66 @@
+@model HeladeriaJackFrost.ViewModels.ProductoViewModel
+
+@{
+    var esNuevo = Model.ID_Producto == 0;
+}
+
+<form id="formProducto"
+      method="post"
+      asp-controller="Producto"
+      asp-action="@(esNuevo ? "Crear" : "Actualizar")">
+    <div class="modal-header bg-success text-white">
+        <h5 class="modal-title">@(esNuevo ? "Registrar Nuevo Producto" : "Actualizar Producto")</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+    </div>
+
+    <div class="modal-body">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+        <input asp-for="ID_Producto" type="hidden" />
+
+        <div class="mb-3">
+            <label asp-for="Nombre" class="form-label">Nombre del Producto</label>
+            <input asp-for="Nombre" class="form-control"
+                   pattern="[\s\S]*[\p{L}][\s\S]*"
+                   title="Incluya al menos una letra; puede usar números y caracteres especiales."
+                   autocomplete="off" />
+            <span asp-validation-for="Nombre" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="IdCategoria" class="form-label">Categoría</label>
+            <select asp-for="IdCategoria" class="form-select" asp-items="ViewBag.ListaCategorias">
+                <option value="">Seleccione una categoría</option>
+            </select>
+            <span asp-validation-for="IdCategoria" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Precio" class="form-label">Precio</label>
+            <input asp-for="Precio" class="form-control" type="number" min="0.01" step="0.01" />
+            <span asp-validation-for="Precio" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Stock" class="form-label">Stock</label>
+            <input asp-for="Stock" class="form-control" type="number" min="0" step="1" />
+            <span asp-validation-for="Stock" class="text-danger"></span>
+        </div>
+
+        <small class="text-muted d-none d-sm-inline">
+            <kbd>Ctrl</kbd> + <kbd>S</kbd> guardar &middot; <kbd>Esc</kbd> cancelar
+        </small>
+    </div>
+
+    <div class="modal-footer justify-content-between">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="bi bi-x-circle me-1"></i> Cancelar
+        </button>
+        <button type="submit"
+                class="btn btn-success"
+                data-bs-toggle="tooltip"
+                data-bs-placement="top"
+                data-bs-title="Guardar (Ctrl + S)">
+            <i class="bi bi-check-circle me-1"></i> Guardar Producto
+        </button>
+    </div>
+</form>

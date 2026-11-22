@@ -12,6 +12,9 @@ namespace HeladeriaJackFrost.Controllers;
 [Authorize(Roles = "Administrador")]
 public class ProductoController : Controller
 {
+    private const int EstadoActivo = 1;
+    private const int EstadoEliminado = 5;
+
     private readonly HeladeriaDbContext _context;
 
     public ProductoController(HeladeriaDbContext context)
@@ -19,7 +22,7 @@ public class ProductoController : Controller
         _context = context;
     }
 
-    public async Task<IActionResult> Index(int? idCategoria)
+    public async Task<IActionResult> Index(int? idCategoria, bool mostrarEliminados = false)
     {
         var categorias = await _context.Categoria
             .OrderBy(c => c.Nombre)
@@ -27,6 +30,9 @@ public class ProductoController : Controller
 
         var consulta = _context.Producto
             .Include(p => p.IdCategoriaNavigation)
+            .Where(p => mostrarEliminados
+                ? p.Estado == EstadoEliminado
+                : p.Estado != EstadoEliminado)
             .AsQueryable();
 
         if (idCategoria.HasValue
@@ -44,7 +50,8 @@ public class ProductoController : Controller
                 Categoria = p.IdCategoriaNavigation.Nombre,
                 Nombre = p.Nombre,
                 Precio = p.Precio,
-                Stock = p.Stock
+                Stock = p.Stock,
+                Estado = p.Estado
             })
             .ToListAsync();
 
@@ -53,15 +60,41 @@ public class ProductoController : Controller
             nameof(Categoria.IdCategoria),
             nameof(Categoria.Nombre),
             ViewBag.IdCategoriaSeleccionada);
+        ViewBag.MostrarEliminados = mostrarEliminados;
 
         return View(productos);
     }
 
     [HttpGet]
-    public async Task<IActionResult> Crear()
+    public async Task<IActionResult> Formulario(int? id)
     {
-        await CargarCategorias();
-        return View(new ProductoViewModel());
+        ProductoViewModel viewModel;
+
+        if (id is null)
+        {
+            viewModel = new ProductoViewModel();
+        }
+        else
+        {
+            var producto = await _context.Producto
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.IdProducto == id && p.Estado != EstadoEliminado);
+
+            if (producto == null)
+                return NotFound();
+
+            viewModel = new ProductoViewModel
+            {
+                ID_Producto = producto.IdProducto,
+                IdCategoria = producto.IdCategoria,
+                Nombre = producto.Nombre,
+                Precio = producto.Precio,
+                Stock = producto.Stock
+            };
+        }
+
+        await CargarCategorias(viewModel.IdCategoria);
+        return PartialView("_ProductoForm", viewModel);
     }
 
     [HttpPost]
@@ -77,7 +110,7 @@ public class ProductoController : Controller
         if (!ModelState.IsValid)
         {
             await CargarCategorias(viewModel.IdCategoria);
-            return View(viewModel);
+            return FormularioProductoInvalido(viewModel);
         }
 
         var producto = new Producto
@@ -85,13 +118,16 @@ public class ProductoController : Controller
             Nombre = viewModel.Nombre,
             Precio = viewModel.Precio,
             Stock = viewModel.Stock,
-            IdCategoria = viewModel.IdCategoria
+            IdCategoria = viewModel.IdCategoria,
+            Estado = EstadoActivo
         };
 
         try
         {
             _context.Producto.Add(producto);
             await _context.SaveChangesAsync();
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                return Json(new { ok = true });
             return RedirectToAction(nameof(Index));
         }
         catch (DbUpdateException)
@@ -99,29 +135,8 @@ public class ProductoController : Controller
             ModelState.AddModelError(string.Empty,
                 "No se pudo guardar el producto. Verifique que el nombre no esté duplicado y vuelva a intentarlo.");
             await CargarCategorias(viewModel.IdCategoria);
-            return View(viewModel);
+            return FormularioProductoInvalido(viewModel);
         }
-    }
-
-    [HttpGet]
-    public async Task<IActionResult> Actualizar(int id)
-    {
-        var producto = await _context.Producto.FindAsync(id);
-
-        if (producto == null)
-            return NotFound();
-
-        var viewModel = new ProductoViewModel
-        {
-            ID_Producto = producto.IdProducto,
-            IdCategoria = producto.IdCategoria,
-            Nombre = producto.Nombre,
-            Precio = producto.Precio,
-            Stock = producto.Stock
-        };
-
-        await CargarCategorias(viewModel.IdCategoria);
-        return View(viewModel);
     }
 
     [HttpPost]
@@ -130,7 +145,7 @@ public class ProductoController : Controller
     {
         var producto = await _context.Producto.FindAsync(viewModel.ID_Producto);
 
-        if (producto == null)
+        if (producto == null || producto.Estado == EstadoEliminado)
             return NotFound();
 
         if (!string.Equals(viewModel.Nombre, producto.Nombre, StringComparison.Ordinal)
@@ -145,7 +160,7 @@ public class ProductoController : Controller
         if (!ModelState.IsValid)
         {
             await CargarCategorias(viewModel.IdCategoria);
-            return View(viewModel);
+            return FormularioProductoInvalido(viewModel);
         }
 
         producto.Nombre = viewModel.Nombre;
@@ -156,6 +171,8 @@ public class ProductoController : Controller
         try
         {
             await _context.SaveChangesAsync();
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                return Json(new { ok = true });
             return RedirectToAction(nameof(Index));
         }
         catch (DbUpdateException)
@@ -163,28 +180,8 @@ public class ProductoController : Controller
             ModelState.AddModelError(string.Empty,
                 "No se pudo actualizar el producto. Verifique que el nombre no esté duplicado y vuelva a intentarlo.");
             await CargarCategorias(viewModel.IdCategoria);
-            return View(viewModel);
+            return FormularioProductoInvalido(viewModel);
         }
-    }
-
-    [HttpGet]
-    public async Task<IActionResult> Eliminar(int id)
-    {
-        var producto = await _context.Producto
-            .Include(p => p.IdCategoriaNavigation)
-            .FirstOrDefaultAsync(p => p.IdProducto == id);
-
-        if (producto == null)
-            return NotFound();
-
-        return View(new ProductoViewModel
-        {
-            ID_Producto = producto.IdProducto,
-            Categoria = producto.IdCategoriaNavigation.Nombre,
-            Nombre = producto.Nombre,
-            Precio = producto.Precio,
-            Stock = producto.Stock
-        });
     }
 
     [HttpPost, ActionName("Eliminar")]
@@ -193,31 +190,58 @@ public class ProductoController : Controller
     {
         var producto = await _context.Producto.FindAsync(id);
 
-        if (producto == null)
+        if (producto == null || producto.Estado == EstadoEliminado)
             return NotFound();
-
-        var tieneCompras = await _context.Compra.AnyAsync(c => c.IdProducto == id);
-        var tieneVentas = await _context.Detalle.AnyAsync(d => d.IdProducto == id);
-
-        if (tieneCompras || tieneVentas)
-        {
-            ModelState.AddModelError(string.Empty,
-                "No se puede eliminar este producto porque está asociado a compras o ventas registradas.");
-            return View("Eliminar", await ObtenerProductoViewModel(id));
-        }
 
         try
         {
-            _context.Producto.Remove(producto);
+            producto.Estado = EstadoEliminado;
             await _context.SaveChangesAsync();
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                return Json(new { ok = true });
             return RedirectToAction(nameof(Index));
         }
         catch (DbUpdateException)
         {
             ModelState.AddModelError(string.Empty,
-                "No se pudo eliminar el producto porque tiene registros relacionados o ocurrió un error al guardar.");
-            return View("Eliminar", await ObtenerProductoViewModel(id));
+                "No se pudo retirar el producto del catálogo. Inténtelo nuevamente.");
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                Response.StatusCode = StatusCodes.Status422UnprocessableEntity;
+                return Json(new
+                {
+                    error = "No se pudo retirar el producto del catálogo. Inténtelo nuevamente."
+                });
+            }
+            TempData["MensajeError"] = "No se pudo retirar el producto del catálogo. Inténtelo nuevamente.";
+            return RedirectToAction(nameof(Index));
         }
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Reactivar(int id)
+    {
+        var producto = await _context.Producto
+            .FirstOrDefaultAsync(p =>
+                p.IdProducto == id && p.Estado == EstadoEliminado);
+
+        if (producto == null)
+            return NotFound();
+
+        try
+        {
+            producto.Estado = EstadoActivo;
+            await _context.SaveChangesAsync();
+            TempData["MensajeExito"] = $"El producto \"{producto.Nombre}\" volvió al catálogo.";
+        }
+        catch (DbUpdateException)
+        {
+            TempData["MensajeError"] =
+                "No se pudo reactivar el producto. Inténtelo nuevamente.";
+        }
+
+        return RedirectToAction(nameof(Index), new { mostrarEliminados = true });
     }
 
     private async Task ValidarCategoria(int idCategoria)
@@ -246,19 +270,10 @@ public class ProductoController : Controller
             seleccionada);
     }
 
-    private async Task<ProductoViewModel> ObtenerProductoViewModel(int id)
+    private IActionResult FormularioProductoInvalido(ProductoViewModel viewModel)
     {
-        var producto = await _context.Producto
-            .Include(p => p.IdCategoriaNavigation)
-            .FirstAsync(p => p.IdProducto == id);
-
-        return new ProductoViewModel
-        {
-            ID_Producto = producto.IdProducto,
-            Categoria = producto.IdCategoriaNavigation.Nombre,
-            Nombre = producto.Nombre,
-            Precio = producto.Precio,
-            Stock = producto.Stock
-        };
+        Response.StatusCode = StatusCodes.Status422UnprocessableEntity;
+        return PartialView("_ProductoForm", viewModel);
     }
+
 }

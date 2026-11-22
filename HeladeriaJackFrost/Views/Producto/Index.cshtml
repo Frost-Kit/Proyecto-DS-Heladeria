@@ -6,9 +6,23 @@
 
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2>Lista de Productos</h2>
-        <a asp-controller="Producto" asp-action="Crear" class="btn btn-success">Registrar Nuevo Producto</a>
+        <h2>@(ViewBag.MostrarEliminados ? "Productos retirados" : "Lista de Productos")</h2>
+        <button type="button"
+                class="btn btn-success"
+                data-bs-toggle="modal"
+                data-bs-target="#modalProducto">
+            Registrar Nuevo Producto
+        </button>
     </div>
+
+    @if (TempData["MensajeExito"] != null)
+    {
+        <div class="alert alert-success" role="alert">@TempData["MensajeExito"]</div>
+    }
+    @if (TempData["MensajeError"] != null)
+    {
+        <div class="alert alert-danger" role="alert">@TempData["MensajeError"]</div>
+    }
 
     <form asp-action="Index" method="get" class="row g-2 align-items-end mb-3">
         <div class="col-md-5">
@@ -17,6 +31,15 @@
                 <option value="">Todas las categorías</option>
             </select>
         </div>
+        <div class="col-auto">
+            <div class="form-check">
+                <input id="mostrarEliminados" name="mostrarEliminados" type="checkbox"
+                       value="true" class="form-check-input"
+                       checked="@(ViewBag.MostrarEliminados ? "checked" : null)" />
+                <label for="mostrarEliminados" class="form-check-label">Mostrar productos retirados</label>
+            </div>
+        </div>
+
         <div class="col-auto">
             <button type="submit" class="btn btn-primary">Filtrar</button>
             <a asp-action="Index" class="btn btn-secondary">Limpiar</a>
@@ -32,6 +55,7 @@
                     <th>Nombre</th>
                     <th>Precio</th>
                     <th>Stock</th>
+                    <th>Estado</th>
                     <th class="text-center">Acciones</th>
                 </tr>
             </thead>
@@ -46,11 +70,33 @@
                             <td>@item.Nombre</td>
                             <td>@item.Precio.ToString("N2")</td>
                             <td>@item.Stock</td>
+                            <td>@(item.Estado == 5 ? "Retirado" : "Activo")</td>
                             <td class="text-center">
-                                <a asp-action="Actualizar" asp-route-id="@item.ID_Producto"
-                                   class="btn btn-sm btn-warning">Editar</a>
-                                <a asp-action="Eliminar" asp-route-id="@item.ID_Producto"
-                                   class="btn btn-sm btn-danger">Eliminar</a>
+                                @if (item.Estado == 5)
+                                {
+                                    <form asp-action="Reactivar" asp-route-id="@item.ID_Producto"
+                                          method="post" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-success">Reactivar</button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <button type="button"
+                                            class="btn btn-sm btn-warning"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalProducto"
+                                            data-id="@item.ID_Producto">
+                                        Editar
+                                    </button>
+                                    <button type="button"
+                                            class="btn btn-sm btn-danger"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalEliminarProducto"
+                                            data-id="@item.ID_Producto"
+                                            data-nombre="@item.Nombre">
+                                        Eliminar
+                                    </button>
+                                }
                             </td>
                         </tr>
                     }
@@ -58,10 +104,12 @@
                 else
                 {
                     <tr>
-                        <td colspan="6" class="text-center text-muted py-4">
-                            @(ViewBag.IdCategoriaSeleccionada != null
-                                ? "No hay productos en la categoría seleccionada."
-                                : "No hay productos registrados todavía.")
+                        <td colspan="7" class="text-center text-muted py-4">
+                            @(ViewBag.MostrarEliminados
+                                ? "No hay productos retirados."
+                                : ViewBag.IdCategoriaSeleccionada != null
+                                    ? "No hay productos en la categoría seleccionada."
+                                    : "No hay productos registrados todavía.")
                         </td>
                     </tr>
                 }
@@ -69,3 +117,214 @@
         </table>
     </div>
 </div>
+
+<div class="modal fade" id="modalProducto" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" id="contenidoProducto"></div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEliminarProducto" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="formEliminarProducto" asp-action="Eliminar" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="eliminarProductoId" />
+
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>Confirmar eliminación
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+
+                <div class="modal-body">
+                    <p class="mb-2">
+                        ¿Está seguro de que desea eliminar el producto
+                        <strong id="eliminarProductoNombre"></strong>?
+                    </p>
+                    <p class="text-muted small mb-0">
+                        El producto se retirará del catálogo, pero se conservarán sus compras y ventas registradas.
+                    </p>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash-fill me-1"></i> Sí, eliminar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+    <script>
+        (() => {
+            const modal = document.getElementById('modalProducto');
+            const contenido = document.getElementById('contenidoProducto');
+            const urlFormulario = '@Url.Action("Formulario", "Producto")';
+            let guardando = false;
+
+            const spinner = `
+                <div class="modal-body text-center py-5">
+                    <div class="spinner-border text-success" role="status"></div>
+                </div>`;
+
+            const errorCarga = `
+                <div class="modal-body text-center py-4">
+                    <p class="text-danger mb-3">No se pudo cargar el formulario. Inténtalo nuevamente.</p>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>`;
+
+            function limpiarTooltips() {
+                contenido.querySelectorAll('[data-bs-toggle="tooltip"]')
+                    .forEach(el => bootstrap.Tooltip.getInstance(el)?.dispose());
+            }
+
+            function cargarFormulario(html) {
+                limpiarTooltips();
+                contenido.innerHTML = html;
+
+                const form = contenido.querySelector('form');
+                if (form) $.validator.unobtrusive.parse(form);
+
+                contenido.querySelectorAll('[data-bs-toggle="tooltip"]')
+                    .forEach(el => new bootstrap.Tooltip(el));
+                contenido.querySelector('input[type="text"]')?.focus();
+            }
+
+            function sesionExpirada(resp) {
+                if (resp.redirected) {
+                    window.location.href = resp.url;
+                    return true;
+                }
+                return false;
+            }
+
+            modal.addEventListener('show.bs.modal', async (event) => {
+                const id = event.relatedTarget?.getAttribute('data-id');
+                const url = id ? `${urlFormulario}?id=${encodeURIComponent(id)}` : urlFormulario;
+                contenido.innerHTML = spinner;
+
+                try {
+                    const resp = await fetch(url, {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    if (sesionExpirada(resp)) return;
+                    if (!resp.ok) throw new Error(resp.status);
+                    cargarFormulario(await resp.text());
+                } catch {
+                    contenido.innerHTML = errorCarga;
+                }
+            });
+
+            modal.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+                    e.preventDefault();
+                    contenido.querySelector('#formProducto')?.requestSubmit();
+                }
+            });
+
+            contenido.addEventListener('submit', async (e) => {
+                const form = e.target;
+                if (form.id !== 'formProducto') return;
+                e.preventDefault();
+
+                if (guardando) return;
+                if (!$(form).valid()) return;
+
+                guardando = true;
+                const boton = form.querySelector('button[type="submit"]');
+                boton.disabled = true;
+
+                try {
+                    const resp = await fetch(form.action, {
+                        method: 'POST',
+                        body: new FormData(form),
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+
+                    if (sesionExpirada(resp)) return;
+
+                    if (resp.ok) {
+                        window.location.reload();
+                        return;
+                    }
+
+                    if (resp.status === 422) {
+                        cargarFormulario(await resp.text());
+                        return;
+                    }
+
+                    throw new Error(resp.status);
+                } catch {
+                    boton.disabled = false;
+                    const aviso = document.createElement('div');
+                    aviso.className = 'alert alert-danger py-2';
+                    aviso.textContent = 'Ocurrió un error inesperado al guardar. Inténtalo nuevamente.';
+                    form.querySelector('.modal-body').prepend(aviso);
+                } finally {
+                    guardando = false;
+                }
+            });
+
+            const modalEliminar = document.getElementById('modalEliminarProducto');
+            const formEliminar = document.getElementById('formEliminarProducto');
+            let eliminando = false;
+
+            modalEliminar.addEventListener('show.bs.modal', (event) => {
+                const boton = event.relatedTarget;
+                document.getElementById('eliminarProductoId').value =
+                    boton.getAttribute('data-id');
+                document.getElementById('eliminarProductoNombre').textContent =
+                    boton.getAttribute('data-nombre');
+            });
+
+            modalEliminar.addEventListener('shown.bs.modal', () => {
+                modalEliminar.querySelector('.btn-secondary').focus();
+            });
+
+            formEliminar.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                if (eliminando) return;
+
+                eliminando = true;
+                const boton = formEliminar.querySelector('button[type="submit"]');
+                boton.disabled = true;
+
+                try {
+                    const resp = await fetch(formEliminar.action, {
+                        method: 'POST',
+                        body: new FormData(formEliminar),
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+
+                    if (sesionExpirada(resp)) return;
+
+                    if (resp.ok) {
+                        window.location.reload();
+                        return;
+                    }
+
+                    const payload = await resp.json().catch(() => null);
+                    const aviso = document.createElement('div');
+                    aviso.className = 'alert alert-danger py-2';
+                    aviso.textContent = payload?.error ||
+                        'No se pudo eliminar el producto. Inténtalo nuevamente.';
+                    formEliminar.querySelector('.modal-body').prepend(aviso);
+                } catch {
+                    const aviso = document.createElement('div');
+                    aviso.className = 'alert alert-danger py-2';
+                    aviso.textContent = 'No se pudo eliminar el producto. Inténtalo nuevamente.';
+                    formEliminar.querySelector('.modal-body').prepend(aviso);
+                } finally {
+                    eliminando = false;
+                    boton.disabled = false;
+                }
+            });
+        })();
+    </script>
+}

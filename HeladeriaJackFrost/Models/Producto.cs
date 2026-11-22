@@ -15,6 +15,8 @@ public partial class Producto
 
     public int Stock { get; set; }
 
+    public int Estado { get; set; }
+
     public virtual ICollection<Compra> Compra { get; set; } = new List<Compra>();
 
     public virtual ICollection<Detalle> Detalle { get; set; } = new List<Detalle>();

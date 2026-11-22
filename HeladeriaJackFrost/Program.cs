@@ -10,7 +10,7 @@ namespace HeladeriaJackFrost;
 
 public class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         Log.Logger = new LoggerConfiguration()
             .WriteTo.Console()
