@@ -112,6 +112,7 @@
 
                                         <button type="button"
                                                 class="btn btn-sm btn-danger flex-fill d-flex align-items-center justify-content-center gap-1 fw-semibold"
+                                                @(item.Estado == 5 ? "disabled": null)
                                                 data-bs-toggle="modal"
                                                 data-bs-target="#modalEliminar"
                                                 data-id="@item.IdProveedor"
@@ -171,6 +172,7 @@
 
                                     <button type="button"
                                             class="btn btn-sm btn-danger"
+                                            @(item.Estado == 5 ? "disabled" : null)
                                             data-bs-toggle="modal"
                                             data-bs-target="#modalEliminar"
                                             data-id="@item.IdProveedor"
