@@ -88,8 +88,14 @@
                                             data-id="@item.ID_Producto">
                                         Editar
                                     </button>
-                                    <a asp-action="Eliminar" asp-route-id="@item.ID_Producto"
-                                       class="btn btn-sm btn-danger">Eliminar</a>
+                                    <button type="button"
+                                            class="btn btn-sm btn-danger"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalEliminarProducto"
+                                            data-id="@item.ID_Producto"
+                                            data-nombre="@item.Nombre">
+                                        Eliminar
+                                    </button>
                                 }
                             </td>
                         </tr>
@@ -115,6 +121,41 @@
 <div class="modal fade" id="modalProducto" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" id="contenidoProducto"></div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEliminarProducto" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="formEliminarProducto" asp-action="Eliminar" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="eliminarProductoId" />
+
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>Confirmar eliminación
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+
+                <div class="modal-body">
+                    <p class="mb-2">
+                        ¿Está seguro de que desea eliminar el producto
+                        <strong id="eliminarProductoNombre"></strong>?
+                    </p>
+                    <p class="text-muted small mb-0">
+                        El producto se retirará del catálogo, pero se conservarán sus compras y ventas registradas.
+                    </p>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash-fill me-1"></i> Sí, eliminar
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
@@ -227,6 +268,61 @@
                     form.querySelector('.modal-body').prepend(aviso);
                 } finally {
                     guardando = false;
+                }
+            });
+
+            const modalEliminar = document.getElementById('modalEliminarProducto');
+            const formEliminar = document.getElementById('formEliminarProducto');
+            let eliminando = false;
+
+            modalEliminar.addEventListener('show.bs.modal', (event) => {
+                const boton = event.relatedTarget;
+                document.getElementById('eliminarProductoId').value =
+                    boton.getAttribute('data-id');
+                document.getElementById('eliminarProductoNombre').textContent =
+                    boton.getAttribute('data-nombre');
+            });
+
+            modalEliminar.addEventListener('shown.bs.modal', () => {
+                modalEliminar.querySelector('.btn-secondary').focus();
+            });
+
+            formEliminar.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                if (eliminando) return;
+
+                eliminando = true;
+                const boton = formEliminar.querySelector('button[type="submit"]');
+                boton.disabled = true;
+
+                try {
+                    const resp = await fetch(formEliminar.action, {
+                        method: 'POST',
+                        body: new FormData(formEliminar),
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+
+                    if (sesionExpirada(resp)) return;
+
+                    if (resp.ok) {
+                        window.location.reload();
+                        return;
+                    }
+
+                    const payload = await resp.json().catch(() => null);
+                    const aviso = document.createElement('div');
+                    aviso.className = 'alert alert-danger py-2';
+                    aviso.textContent = payload?.error ||
+                        'No se pudo eliminar el producto. Inténtalo nuevamente.';
+                    formEliminar.querySelector('.modal-body').prepend(aviso);
+                } catch {
+                    const aviso = document.createElement('div');
+                    aviso.className = 'alert alert-danger py-2';
+                    aviso.textContent = 'No se pudo eliminar el producto. Inténtalo nuevamente.';
+                    formEliminar.querySelector('.modal-body').prepend(aviso);
+                } finally {
+                    eliminando = false;
+                    boton.disabled = false;
                 }
             });
         })();

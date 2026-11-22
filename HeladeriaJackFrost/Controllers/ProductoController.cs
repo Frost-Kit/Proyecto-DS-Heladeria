@@ -184,26 +184,6 @@ public class ProductoController : Controller
         }
     }
 
-    [HttpGet]
-    public async Task<IActionResult> Eliminar(int id)
-    {
-        var producto = await _context.Producto
-            .Include(p => p.IdCategoriaNavigation)
-            .FirstOrDefaultAsync(p => p.IdProducto == id);
-
-        if (producto == null || producto.Estado == EstadoEliminado)
-            return NotFound();
-
-        return View(new ProductoViewModel
-        {
-            ID_Producto = producto.IdProducto,
-            Categoria = producto.IdCategoriaNavigation.Nombre,
-            Nombre = producto.Nombre,
-            Precio = producto.Precio,
-            Stock = producto.Stock
-        });
-    }
-
     [HttpPost, ActionName("Eliminar")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EliminarConfirmado(int id)
@@ -217,13 +197,24 @@ public class ProductoController : Controller
         {
             producto.Estado = EstadoEliminado;
             await _context.SaveChangesAsync();
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                return Json(new { ok = true });
             return RedirectToAction(nameof(Index));
         }
         catch (DbUpdateException)
         {
             ModelState.AddModelError(string.Empty,
                 "No se pudo retirar el producto del catálogo. Inténtelo nuevamente.");
-            return View("Eliminar", await ObtenerProductoViewModel(id));
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                Response.StatusCode = StatusCodes.Status422UnprocessableEntity;
+                return Json(new
+                {
+                    error = "No se pudo retirar el producto del catálogo. Inténtelo nuevamente."
+                });
+            }
+            TempData["MensajeError"] = "No se pudo retirar el producto del catálogo. Inténtelo nuevamente.";
+            return RedirectToAction(nameof(Index));
         }
     }
 
@@ -285,19 +276,4 @@ public class ProductoController : Controller
         return PartialView("_ProductoForm", viewModel);
     }
 
-    private async Task<ProductoViewModel> ObtenerProductoViewModel(int id)
-    {
-        var producto = await _context.Producto
-            .Include(p => p.IdCategoriaNavigation)
-            .FirstAsync(p => p.IdProducto == id);
-
-        return new ProductoViewModel
-        {
-            ID_Producto = producto.IdProducto,
-            Categoria = producto.IdCategoriaNavigation.Nombre,
-            Nombre = producto.Nombre,
-            Precio = producto.Precio,
-            Stock = producto.Stock
-        };
-    }
 }
