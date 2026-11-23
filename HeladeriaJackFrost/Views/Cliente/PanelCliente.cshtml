@@ -1,4 +1,4 @@
-@model HeladeriaJackFrost.ViewModels.ClienteViewModel
+@model HeladeriaJackFrost.ViewModels.ClienteViewModel?
 
 @{
     ViewData["Title"] = "Panel de Cliente";
@@ -7,6 +7,17 @@
 <div class="container py-5">
     <div class="row justify-content-center">
         <div class="col-md-6 col-lg-5">
+            @if (Model == null)
+            {
+                <div class="alert alert-danger" role="alert">
+                    <p class="mb-3">@ViewBag.MensajeError</p>
+                    <a asp-action="PanelCliente" asp-route-id="@ViewBag.IdCliente" class="btn btn-outline-danger">
+                        <i class="bi bi-arrow-clockwise me-1"></i> Intentar nuevamente
+                    </a>
+                </div>
+            }
+            else
+            {
             
             <!-- Tarjeta de Perfil / Fidelidad -->
             <div class="card shadow-lg border-0 text-center p-4" style="border-radius: var(--radius-xl);">
@@ -60,6 +71,7 @@
                 </div>
 
             </div>
+            }
 
         </div>
     </div>

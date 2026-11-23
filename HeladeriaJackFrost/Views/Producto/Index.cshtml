@@ -166,6 +166,7 @@
             const modal = document.getElementById('modalProducto');
             const contenido = document.getElementById('contenidoProducto');
             const urlFormulario = '@Url.Action("Formulario", "Producto")';
+            const mensajeErrorConexion = 'No pudimos conectarnos a la base de datos. Verifica que el servicio esté activo o intenta nuevamente en unos minutos.';
             let guardando = false;
 
             const spinner = `
@@ -178,6 +179,21 @@
                     <p class="text-danger mb-3">No se pudo cargar el formulario. Inténtalo nuevamente.</p>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                 </div>`;
+
+            function mostrarErrorCarga(mensaje) {
+                const cuerpo = document.createElement('div');
+                cuerpo.className = 'modal-body text-center py-4';
+                const texto = document.createElement('p');
+                texto.className = 'text-danger mb-3';
+                texto.textContent = mensaje;
+                const cerrar = document.createElement('button');
+                cerrar.type = 'button';
+                cerrar.className = 'btn btn-secondary';
+                cerrar.setAttribute('data-bs-dismiss', 'modal');
+                cerrar.textContent = 'Cerrar';
+                cuerpo.append(texto, cerrar);
+                contenido.replaceChildren(cuerpo);
+            }
 
             function limpiarTooltips() {
                 contenido.querySelectorAll('[data-bs-toggle="tooltip"]')
@@ -214,6 +230,11 @@
                         headers: { 'X-Requested-With': 'XMLHttpRequest' }
                     });
                     if (sesionExpirada(resp)) return;
+                    if (resp.status === 503) {
+                        const payload = await resp.json().catch(() => null);
+                        mostrarErrorCarga(payload?.error || mensajeErrorConexion);
+                        return;
+                    }
                     if (!resp.ok) throw new Error(resp.status);
                     cargarFormulario(await resp.text());
                 } catch {
@@ -256,6 +277,16 @@
 
                     if (resp.status === 422) {
                         cargarFormulario(await resp.text());
+                        return;
+                    }
+
+                    if (resp.status === 503) {
+                        const payload = await resp.json().catch(() => null);
+                        boton.disabled = false;
+                        const aviso = document.createElement('div');
+                        aviso.className = 'alert alert-danger py-2';
+                        aviso.textContent = payload?.error || mensajeErrorConexion;
+                        form.querySelector('.modal-body').prepend(aviso);
                         return;
                     }
 

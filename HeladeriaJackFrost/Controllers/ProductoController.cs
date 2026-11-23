@@ -4,6 +4,8 @@ using HeladeriaJackFrost.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
+using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Authorization;
 
@@ -14,52 +16,69 @@ public class ProductoController : Controller
 {
     private const int EstadoActivo = 1;
     private const int EstadoEliminado = 5;
+    private const string MensajeErrorConexion =
+        "No pudimos conectarnos a la base de datos. Verifica que el servicio esté activo o intenta nuevamente en unos minutos.";
 
     private readonly HeladeriaDbContext _context;
+    private readonly ILogger<ProductoController> _logger;
 
-    public ProductoController(HeladeriaDbContext context)
+    public ProductoController(HeladeriaDbContext context, ILogger<ProductoController> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
     public async Task<IActionResult> Index(int? idCategoria, bool mostrarEliminados = false)
     {
-        var categorias = await _context.Categoria
-            .OrderBy(c => c.Nombre)
-            .ToListAsync();
+        var categorias = new List<Categoria>();
+        var productos = new List<ProductoViewModel>();
+        int? idCategoriaSeleccionada = null;
 
-        var consulta = _context.Producto
-            .Include(p => p.IdCategoriaNavigation)
-            .Where(p => mostrarEliminados
-                ? p.Estado == EstadoEliminado
-                : p.Estado != EstadoEliminado)
-            .AsQueryable();
-
-        if (idCategoria.HasValue
-            && categorias.Any(c => c.IdCategoria == idCategoria.Value))
+        try
         {
-            consulta = consulta.Where(p => p.IdCategoria == idCategoria.Value);
-            ViewBag.IdCategoriaSeleccionada = idCategoria.Value;
-        }
+            categorias = await _context.Categoria
+                .OrderBy(c => c.Nombre)
+                .ToListAsync();
 
-        var productos = await consulta
-            .OrderBy(p => p.IdProducto)
-            .Select(p => new ProductoViewModel
+            var consulta = _context.Producto
+                .Include(p => p.IdCategoriaNavigation)
+                .Where(p => mostrarEliminados
+                    ? p.Estado == EstadoEliminado
+                    : p.Estado != EstadoEliminado)
+                .AsQueryable();
+
+            if (idCategoria.HasValue
+                && categorias.Any(c => c.IdCategoria == idCategoria.Value))
             {
-                ID_Producto = p.IdProducto,
-                Categoria = p.IdCategoriaNavigation.Nombre,
-                Nombre = p.Nombre,
-                Precio = p.Precio,
-                Stock = p.Stock,
-                Estado = p.Estado
-            })
-            .ToListAsync();
+                consulta = consulta.Where(p => p.IdCategoria == idCategoria.Value);
+                idCategoriaSeleccionada = idCategoria.Value;
+            }
+
+            productos = await consulta
+                .OrderBy(p => p.IdProducto)
+                .Select(p => new ProductoViewModel
+                {
+                    ID_Producto = p.IdProducto,
+                    Categoria = p.IdCategoriaNavigation.Nombre,
+                    Nombre = p.Nombre,
+                    Precio = p.Precio,
+                    Stock = p.Stock,
+                    Estado = p.Estado
+                })
+                .ToListAsync();
+        }
+        catch (Exception ex) when (EsFalloConexion(ex))
+        {
+            _logger.LogError(ex, "No se pudo cargar la lista de productos por un fallo de conexión a la base de datos.");
+            TempData["MensajeError"] = MensajeErrorConexion;
+        }
 
         ViewBag.ListaCategorias = new SelectList(
             categorias,
             nameof(Categoria.IdCategoria),
             nameof(Categoria.Nombre),
-            ViewBag.IdCategoriaSeleccionada);
+            idCategoriaSeleccionada);
+        ViewBag.IdCategoriaSeleccionada = idCategoriaSeleccionada;
         ViewBag.MostrarEliminados = mostrarEliminados;
 
         return View(productos);
@@ -68,67 +87,80 @@ public class ProductoController : Controller
     [HttpGet]
     public async Task<IActionResult> Formulario(int? id)
     {
-        ProductoViewModel viewModel;
-
-        if (id is null)
+        try
         {
-            viewModel = new ProductoViewModel();
-        }
-        else
-        {
-            var producto = await _context.Producto
-                .AsNoTracking()
-                .FirstOrDefaultAsync(p => p.IdProducto == id && p.Estado != EstadoEliminado);
+            ProductoViewModel viewModel;
 
-            if (producto == null)
-                return NotFound();
-
-            viewModel = new ProductoViewModel
+            if (id is null)
             {
-                ID_Producto = producto.IdProducto,
-                IdCategoria = producto.IdCategoria,
-                Nombre = producto.Nombre,
-                Precio = producto.Precio,
-                Stock = producto.Stock
-            };
-        }
+                viewModel = new ProductoViewModel();
+            }
+            else
+            {
+                var producto = await _context.Producto
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(p => p.IdProducto == id && p.Estado != EstadoEliminado);
 
-        await CargarCategorias(viewModel.IdCategoria);
-        return PartialView("_ProductoForm", viewModel);
+                if (producto == null)
+                    return NotFound();
+
+                viewModel = new ProductoViewModel
+                {
+                    ID_Producto = producto.IdProducto,
+                    IdCategoria = producto.IdCategoria,
+                    Nombre = producto.Nombre,
+                    Precio = producto.Precio,
+                    Stock = producto.Stock
+                };
+            }
+
+            await CargarCategorias(viewModel.IdCategoria);
+            return PartialView("_ProductoForm", viewModel);
+        }
+        catch (Exception ex) when (EsFalloConexion(ex))
+        {
+            _logger.LogError(ex, "No se pudo cargar el formulario del producto {IdProducto} por un fallo de conexión.", id);
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = MensajeErrorConexion });
+        }
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Crear(ProductoViewModel viewModel)
     {
-        if (!NombreValido(viewModel.Nombre))
-            ModelState.AddModelError(nameof(viewModel.Nombre),
-                "El nombre debe incluir al menos una letra; puede contener números y caracteres especiales.");
-
-        await ValidarCategoria(viewModel.IdCategoria);
-
-        if (!ModelState.IsValid)
-        {
-            await CargarCategorias(viewModel.IdCategoria);
-            return FormularioProductoInvalido(viewModel);
-        }
-
-        var producto = new Producto
-        {
-            Nombre = viewModel.Nombre,
-            Precio = viewModel.Precio,
-            Stock = viewModel.Stock,
-            IdCategoria = viewModel.IdCategoria,
-            Estado = EstadoActivo
-        };
-
         try
         {
+            if (!NombreValido(viewModel.Nombre))
+                ModelState.AddModelError(nameof(viewModel.Nombre),
+                    "El nombre debe incluir al menos una letra; puede contener números y caracteres especiales.");
+
+            await ValidarCategoria(viewModel.IdCategoria);
+
+            if (!ModelState.IsValid)
+            {
+                await CargarCategorias(viewModel.IdCategoria);
+                return FormularioProductoInvalido(viewModel);
+            }
+
+            var producto = new Producto
+            {
+                Nombre = viewModel.Nombre,
+                Precio = viewModel.Precio,
+                Stock = viewModel.Stock,
+                IdCategoria = viewModel.IdCategoria,
+                Estado = EstadoActivo
+            };
+
             _context.Producto.Add(producto);
             await _context.SaveChangesAsync();
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 return Json(new { ok = true });
             return RedirectToAction(nameof(Index));
+        }
+        catch (Exception ex) when (EsFalloConexion(ex))
+        {
+            _logger.LogError(ex, "No se pudo crear el producto por un fallo de conexión a la base de datos.");
+            return ErrorConexionProducto();
         }
         catch (DbUpdateException)
         {
@@ -143,37 +175,42 @@ public class ProductoController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Actualizar(ProductoViewModel viewModel)
     {
-        var producto = await _context.Producto.FindAsync(viewModel.ID_Producto);
-
-        if (producto == null || producto.Estado == EstadoEliminado)
-            return NotFound();
-
-        if (!string.Equals(viewModel.Nombre, producto.Nombre, StringComparison.Ordinal)
-            && !NombreValido(viewModel.Nombre))
-        {
-            ModelState.AddModelError(nameof(viewModel.Nombre),
-                "El nombre debe incluir al menos una letra; puede contener números y caracteres especiales.");
-        }
-
-        await ValidarCategoria(viewModel.IdCategoria);
-
-        if (!ModelState.IsValid)
-        {
-            await CargarCategorias(viewModel.IdCategoria);
-            return FormularioProductoInvalido(viewModel);
-        }
-
-        producto.Nombre = viewModel.Nombre;
-        producto.Precio = viewModel.Precio;
-        producto.Stock = viewModel.Stock;
-        producto.IdCategoria = viewModel.IdCategoria;
-
         try
         {
+            var producto = await _context.Producto.FindAsync(viewModel.ID_Producto);
+
+            if (producto == null || producto.Estado == EstadoEliminado)
+                return NotFound();
+
+            if (!string.Equals(viewModel.Nombre, producto.Nombre, StringComparison.Ordinal)
+                && !NombreValido(viewModel.Nombre))
+            {
+                ModelState.AddModelError(nameof(viewModel.Nombre),
+                    "El nombre debe incluir al menos una letra; puede contener números y caracteres especiales.");
+            }
+
+            await ValidarCategoria(viewModel.IdCategoria);
+
+            if (!ModelState.IsValid)
+            {
+                await CargarCategorias(viewModel.IdCategoria);
+                return FormularioProductoInvalido(viewModel);
+            }
+
+            producto.Nombre = viewModel.Nombre;
+            producto.Precio = viewModel.Precio;
+            producto.Stock = viewModel.Stock;
+            producto.IdCategoria = viewModel.IdCategoria;
+
             await _context.SaveChangesAsync();
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 return Json(new { ok = true });
             return RedirectToAction(nameof(Index));
+        }
+        catch (Exception ex) when (EsFalloConexion(ex))
+        {
+            _logger.LogError(ex, "No se pudo actualizar el producto {IdProducto} por un fallo de conexión.", viewModel.ID_Producto);
+            return ErrorConexionProducto();
         }
         catch (DbUpdateException)
         {
@@ -188,18 +225,23 @@ public class ProductoController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EliminarConfirmado(int id)
     {
-        var producto = await _context.Producto.FindAsync(id);
-
-        if (producto == null || producto.Estado == EstadoEliminado)
-            return NotFound();
-
         try
         {
+            var producto = await _context.Producto.FindAsync(id);
+
+            if (producto == null || producto.Estado == EstadoEliminado)
+                return NotFound();
+
             producto.Estado = EstadoEliminado;
             await _context.SaveChangesAsync();
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 return Json(new { ok = true });
             return RedirectToAction(nameof(Index));
+        }
+        catch (Exception ex) when (EsFalloConexion(ex))
+        {
+            _logger.LogError(ex, "No se pudo retirar el producto {IdProducto} por un fallo de conexión.", id);
+            return ErrorConexionProducto();
         }
         catch (DbUpdateException)
         {
@@ -222,18 +264,23 @@ public class ProductoController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Reactivar(int id)
     {
-        var producto = await _context.Producto
-            .FirstOrDefaultAsync(p =>
-                p.IdProducto == id && p.Estado == EstadoEliminado);
-
-        if (producto == null)
-            return NotFound();
-
         try
         {
+            var producto = await _context.Producto
+                .FirstOrDefaultAsync(p =>
+                    p.IdProducto == id && p.Estado == EstadoEliminado);
+
+            if (producto == null)
+                return NotFound();
+
             producto.Estado = EstadoActivo;
             await _context.SaveChangesAsync();
             TempData["MensajeExito"] = $"El producto \"{producto.Nombre}\" volvió al catálogo.";
+        }
+        catch (Exception ex) when (EsFalloConexion(ex))
+        {
+            _logger.LogError(ex, "No se pudo reactivar el producto {IdProducto} por un fallo de conexión.", id);
+            TempData["MensajeError"] = MensajeErrorConexion;
         }
         catch (DbUpdateException)
         {
@@ -242,6 +289,29 @@ public class ProductoController : Controller
         }
 
         return RedirectToAction(nameof(Index), new { mostrarEliminados = true });
+    }
+
+    private IActionResult ErrorConexionProducto()
+    {
+        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+        {
+            Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+            return Json(new { error = MensajeErrorConexion });
+        }
+
+        TempData["MensajeError"] = MensajeErrorConexion;
+        return RedirectToAction(nameof(Index));
+    }
+
+    private static bool EsFalloConexion(Exception exception)
+    {
+        for (var actual = exception; actual != null; actual = actual.InnerException!)
+        {
+            if (actual is NpgsqlException or TimeoutException or SocketException)
+                return true;
+        }
+
+        return false;
     }
 
     private async Task ValidarCategoria(int idCategoria)
