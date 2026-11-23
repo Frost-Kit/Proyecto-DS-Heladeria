@@ -16,44 +16,58 @@ public class ProductoController : Controller
     private const int EstadoEliminado = 5;
 
     private readonly HeladeriaDbContext _context;
+    private readonly ILogger<ProductoController> _logger;
 
-    public ProductoController(HeladeriaDbContext context)
+    public ProductoController(HeladeriaDbContext context, ILogger<ProductoController> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
     public async Task<IActionResult> Index(int? idCategoria, bool mostrarEliminados = false)
     {
-        var categorias = await _context.Categoria
-            .OrderBy(c => c.Nombre)
-            .ToListAsync();
+        var categorias = new List<Categoria>();
+        var productos = new List<ProductoViewModel>();
 
-        var consulta = _context.Producto
-            .Include(p => p.IdCategoriaNavigation)
-            .Where(p => mostrarEliminados
-                ? p.Estado == EstadoEliminado
-                : p.Estado != EstadoEliminado)
-            .AsQueryable();
-
-        if (idCategoria.HasValue
-            && categorias.Any(c => c.IdCategoria == idCategoria.Value))
+        try
         {
-            consulta = consulta.Where(p => p.IdCategoria == idCategoria.Value);
-            ViewBag.IdCategoriaSeleccionada = idCategoria.Value;
-        }
+            categorias = await _context.Categoria
+                .OrderBy(c => c.Nombre)
+                .ToListAsync();
 
-        var productos = await consulta
-            .OrderBy(p => p.IdProducto)
-            .Select(p => new ProductoViewModel
+            var consulta = _context.Producto
+                .Include(p => p.IdCategoriaNavigation)
+                .Where(p => mostrarEliminados
+                    ? p.Estado == EstadoEliminado
+                    : p.Estado != EstadoEliminado)
+                .AsQueryable();
+
+            if (idCategoria.HasValue
+                && categorias.Any(c => c.IdCategoria == idCategoria.Value))
             {
-                ID_Producto = p.IdProducto,
-                Categoria = p.IdCategoriaNavigation.Nombre,
-                Nombre = p.Nombre,
-                Precio = p.Precio,
-                Stock = p.Stock,
-                Estado = p.Estado
-            })
-            .ToListAsync();
+                consulta = consulta.Where(p => p.IdCategoria == idCategoria.Value);
+                ViewBag.IdCategoriaSeleccionada = idCategoria.Value;
+            }
+
+            productos = await consulta
+                .OrderBy(p => p.IdProducto)
+                .Select(p => new ProductoViewModel
+                {
+                    ID_Producto = p.IdProducto,
+                    Categoria = p.IdCategoriaNavigation.Nombre,
+                    Nombre = p.Nombre,
+                    Precio = p.Precio,
+                    Stock = p.Stock,
+                    Estado = p.Estado
+                })
+                .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "No se pudo cargar la lista de productos.");
+            ViewBag.MensajeError =
+                "No se pudieron cargar los productos desde la base de datos. Verifica la conexión e inténtalo nuevamente.";
+        }
 
         ViewBag.ListaCategorias = new SelectList(
             categorias,

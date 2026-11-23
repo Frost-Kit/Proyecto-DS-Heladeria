@@ -12,17 +12,33 @@ namespace HeladeriaJackFrost.Controllers;
 public class VentaController : Controller
 {
     private readonly HeladeriaDbContext _context;
+    private readonly ILogger<VentaController> _logger;
 
-    public VentaController(HeladeriaDbContext context)
+    public VentaController(HeladeriaDbContext context, ILogger<VentaController> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
     // Listado de transacciones realizadas
     public async Task<IActionResult> Index(bool soloHoy = false)
     {
-        var ventas = await ObtenerVentasFiltradas(soloHoy);
-        await CargarListasDesplegables();
+        List<Venta> ventas = new();
+        try
+        {
+            ventas = await ObtenerVentasFiltradas(soloHoy);
+            await CargarListasDesplegables();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "No se pudo cargar la lista de ventas.");
+            ViewBag.MensajeError =
+                "No se pudieron cargar las ventas desde la base de datos. Verifica la conexión e inténtalo nuevamente.";
+            ViewBag.Productos = new List<Producto>();
+            ViewBag.Clientes = new SelectList(Enumerable.Empty<SelectListItem>());
+            ViewBag.Personal = new SelectList(Enumerable.Empty<SelectListItem>());
+            ViewBag.ClienteDefectoId = null;
+        }
 
         ViewBag.SoloHoy = soloHoy;
         ViewBag.VentaForm = new VentaViewModel
@@ -175,9 +191,11 @@ public class VentaController : Controller
         catch (Exception ex)
         {
             // Revertir cabecera, detalles y stock si algo falla
+            _logger.LogError(ex, "No se pudo completar la venta.");
             await transaccion.RollbackAsync();
 
-            ModelState.AddModelError("Detalles", $"No se pudo completar la transacción: {ex.Message}");
+            ModelState.AddModelError("Detalles",
+                "No se pudo completar la venta. Verifica la conexión con la base de datos e inténtalo nuevamente.");
             var ventas = await ObtenerVentasFiltradas(false);
             await CargarListasDesplegables();
             ViewBag.SoloHoy = false;

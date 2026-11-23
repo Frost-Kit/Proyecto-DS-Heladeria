@@ -1,10 +1,17 @@
-@model HeladeriaJackFrost.ViewModels.ClienteViewModel
+@model HeladeriaJackFrost.ViewModels.ClienteViewModel?
 
 @{
     ViewData["Title"] = "Panel de Cliente";
 }
 
 <div class="container py-5">
+    @if (ViewBag.MensajeError != null)
+    {
+        <div class="alert alert-danger" role="alert">@ViewBag.MensajeError</div>
+    }
+
+    @if (Model is not null)
+    {
     <div class="row justify-content-center">
         <div class="col-md-6 col-lg-5">
             
@@ -63,4 +70,5 @@
 
         </div>
     </div>
+    }
 </div>

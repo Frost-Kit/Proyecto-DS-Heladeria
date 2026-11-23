@@ -23,6 +23,10 @@
     {
         <div class="alert alert-danger" role="alert">@TempData["MensajeError"]</div>
     }
+    @if (ViewBag.MensajeError != null)
+    {
+        <div class="alert alert-danger" role="alert">@ViewBag.MensajeError</div>
+    }
 
     <form asp-action="Index" method="get" class="row g-2 align-items-end mb-3">
         <div class="col-md-5">

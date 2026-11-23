@@ -45,10 +45,7 @@ public class Program
             // Registra peticiones HTTP (opcional)
             app.UseSerilogRequestLogging();
 
-            if (!app.Environment.IsDevelopment())
-            {
-                app.UseExceptionHandler("/Home/Error");
-            }
+            app.UseExceptionHandler("/Home/Error");
 
             app.UseRouting();
 

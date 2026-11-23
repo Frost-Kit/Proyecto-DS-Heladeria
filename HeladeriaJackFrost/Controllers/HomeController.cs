@@ -1,9 +1,11 @@
 using HeladeriaJackFrost.Data;
 using HeladeriaJackFrost.Models;
 using HeladeriaJackFrost.ViewModels;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics;
 
 namespace HeladeriaJackFrost.Controllers;
 
@@ -11,10 +13,27 @@ namespace HeladeriaJackFrost.Controllers;
 public class HomeController : Controller
 {
     private readonly HeladeriaDbContext _context;
+    private readonly ILogger<HomeController> _logger;
 
-    public HomeController(HeladeriaDbContext context)
+    public HomeController(HeladeriaDbContext context, ILogger<HomeController> logger)
     {
         _context = context;
+        _logger = logger;
+    }
+
+    [AllowAnonymous]
+    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+    public IActionResult Error()
+    {
+        var exceptionFeature = HttpContext.Features.Get<IExceptionHandlerPathFeature>();
+        var exception = exceptionFeature?.Error;
+        if (exception != null)
+            _logger.LogError(exception, "Error no controlado al procesar {Path}.", exceptionFeature?.Path);
+
+        return View(new ErrorViewModel
+        {
+            RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier
+        });
     }
 
     public IActionResult Index()

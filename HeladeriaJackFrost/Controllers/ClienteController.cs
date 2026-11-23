@@ -11,56 +11,68 @@ namespace HeladeriaJackFrost.Controllers
     public class ClienteController : Controller
     {
         private readonly HeladeriaDbContext _context;
+        private readonly ILogger<ClienteController> _logger;
 
-        public ClienteController(HeladeriaDbContext context)
+        public ClienteController(HeladeriaDbContext context, ILogger<ClienteController> logger)
         {
             _context = context;
+            _logger = logger;
         }
         
         [Authorize(Roles = "Administrador, Cliente")]
         public async Task<IActionResult> PanelCliente(int? id)
         {
-            int idPersona;
-
-            // si es Administrador y proporciona un ID de cliente por parámetro
-            if (User.IsInRole("Administrador") && id.HasValue)
+            try
             {
-                var clienteBuscado = await _context.Cliente
-                    .FirstOrDefaultAsync(c => c.IdCliente == id.Value);
+                int idPersona;
 
-                if (clienteBuscado == null) return NotFound();
-                idPersona = clienteBuscado.IdPersona;
-            }
-            else
-            {
-                // Si es un Cliente normal (o el admin entra a su propio perfil si tuviera)
-                var idPersonaClaim = User.FindFirst("IdPersona")?.Value;
-        
-                if (idPersonaClaim == null || !int.TryParse(idPersonaClaim, out idPersona))
+                // si es Administrador y proporciona un ID de cliente por parámetro
+                if (User.IsInRole("Administrador") && id.HasValue)
                 {
-                    return RedirectToAction("AccesoDenegado", "Acceso");
+                    var clienteBuscado = await _context.Cliente
+                        .FirstOrDefaultAsync(c => c.IdCliente == id.Value);
+
+                    if (clienteBuscado == null) return NotFound();
+                    idPersona = clienteBuscado.IdPersona;
                 }
+                else
+                {
+                    // Si es un Cliente normal (o el admin entra a su propio perfil si tuviera)
+                    var idPersonaClaim = User.FindFirst("IdPersona")?.Value;
+
+                    if (idPersonaClaim == null || !int.TryParse(idPersonaClaim, out idPersona))
+                    {
+                        return RedirectToAction("AccesoDenegado", "Acceso");
+                    }
+                }
+
+                // Buscamos los datos completos de la persona y cliente
+                var clientePersona = await _context.Cliente
+                    .Include(c => c.IdPersonaNavigation)
+                    .FirstOrDefaultAsync(c => c.IdPersona == idPersona);
+
+                if (clientePersona == null) return NotFound();
+
+                var modelUnico = new ClienteViewModel
+                {
+                    IdCliente = clientePersona.IdCliente,
+                    IdPersona = clientePersona.IdPersona,
+                    Nombre = clientePersona.IdPersonaNavigation.Nombre,
+                    ApellidoPat = clientePersona.IdPersonaNavigation.ApellidoPat,
+                    ApellidoMat = clientePersona.IdPersonaNavigation.ApellidoMat,
+                    Email = clientePersona.IdPersonaNavigation.Cuenta != null ? clientePersona.IdPersonaNavigation.Cuenta.Email : "Sin correo",
+                    PuntosDeCliente = clientePersona.PuntosDeCliente
+                };
+
+                return View(modelUnico);
             }
-
-            // Buscamos los datos completos de la persona y cliente
-            var clientePersona = await _context.Cliente
-                .Include(c => c.IdPersonaNavigation)
-                .FirstOrDefaultAsync(c => c.IdPersona == idPersona);
-
-            if (clientePersona == null) return NotFound();
-
-            var modelUnico = new ClienteViewModel
+            catch (Exception ex)
             {
-                IdCliente = clientePersona.IdCliente,
-                IdPersona = clientePersona.IdPersona,
-                Nombre = clientePersona.IdPersonaNavigation.Nombre,
-                ApellidoPat = clientePersona.IdPersonaNavigation.ApellidoPat,
-                ApellidoMat = clientePersona.IdPersonaNavigation.ApellidoMat,
-                Email = clientePersona.IdPersonaNavigation.Cuenta != null ? clientePersona.IdPersonaNavigation.Cuenta.Email : "Sin correo",
-                PuntosDeCliente = clientePersona.PuntosDeCliente
-            };
-
-            return View(modelUnico);
+                _logger.LogError(ex, "No se pudo cargar el panel del cliente.");
+                ViewBag.MensajeError =
+                    "No se pudo cargar la información del cliente desde la base de datos. Verifica la conexión e inténtalo nuevamente.";
+                return View((ClienteViewModel?)null);
+            }
         }
 
         // Vista de tabla general exclusiva para el Administrador
