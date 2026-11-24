@@ -285,7 +285,9 @@ WHERE subtotal_bruto = 0;
 ALTER TABLE producto
     ADD COLUMN IF NOT EXISTS estado INT NOT NULL DEFAULT 1;
 
--- Mas inserts para probar el modulo de reportes
+
+--===================================================================================
+-- TODO: Mas inserts para probar el modulo de reportes (ventas 10 a 36)
 INSERT INTO venta (
     id_cliente, id_personal, fecha,
     subtotal_bruto, porcentaje_descuento, monto_descuento, total, estado
@@ -312,8 +314,14 @@ INSERT INTO venta (
 (5, 1, '2026-10-23 15:05:00', 133.00,  5.00,  6.65, 126.35, 1), -- Venta 24
 (6, 4, '2026-10-31 20:45:00', 181.00, 15.00, 27.15, 153.85, 1), -- Venta 25
 
--- NOVIEMBRE 2026 (Ventas 26 a 30 - complementando el seed del 9 al 11 de nov)
+-- NOVIEMBRE 2026 (Ventas 26 a 36 - incluyendo 6 ventas el 12 de nov para reportes diarios)
 (1, 1, '2026-11-04 11:00:00',  70.00,  0.00,  0.00,  70.00, 1), -- Venta 26
+(2, 1, '2026-11-12 10:15:00',  76.00,  0.00,  0.00,  76.00, 1), -- Venta 31 (12 nov, completada, 0%)
+(3, 2, '2026-11-12 12:30:00', 130.00, 10.00, 13.00, 117.00, 1), -- Venta 32 (12 nov, completada, 10%)
+(4, 1, '2026-11-12 15:10:00', 170.00, 15.00, 25.50, 144.50, 1), -- Venta 33 (12 nov, completada, 15%)
+(5, 4, '2026-11-12 17:45:00', 195.00, 20.00, 39.00, 156.00, 1), -- Venta 34 (12 nov, completada, 20% máx)
+(6, 4, '2026-11-12 19:20:00',  85.00,  5.00,  4.25,  80.75, 2), -- Venta 35 (12 nov, pendiente, 5%)
+(7, 4, '2026-11-12 20:50:00', 102.00,  0.00,  0.00, 102.00, 4), -- Venta 36 (12 nov, anulada, 0%)
 (8, 2, '2026-11-14 16:15:00', 144.00, 10.00, 14.40, 129.60, 1), -- Venta 27
 (3, 4, '2026-11-18 19:30:00', 102.00,  0.00,  0.00, 102.00, 1), -- Venta 28
 (5, 1, '2026-11-21 14:40:00', 195.00, 20.00, 39.00, 156.00, 1), -- Venta 29
@@ -379,6 +387,14 @@ INSERT INTO detalle (id_venta, id_producto, cantidad, precio_unitario, descuento
 
 -- Venta 26 (2026-11-04 | subtotal_bruto: 70.00)
 (26, 1,  2, 35.00, 0.00,  70.00),
+
+-- Ventas 31 a 36 (2026-11-12)
+(31,  2, 2, 38.00, 0.00,  76.00),
+(32, 11, 2, 65.00, 0.00, 130.00),
+(33, 10, 2, 85.00, 0.00, 170.00),
+(34, 11, 3, 65.00, 0.00, 195.00),
+(35, 10, 1, 85.00, 0.00,  85.00),
+(36,  8, 3, 34.00, 0.00, 102.00),
 
 -- Venta 27 (2026-11-14 | subtotal_bruto: 144.00)
 (27, 4,  3, 48.00, 0.00, 144.00),
