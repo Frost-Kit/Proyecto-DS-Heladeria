@@ -29,6 +29,9 @@ public class Program
                     .ReadFrom.Services(services));
 
             builder.Services.AddControllersWithViews();
+            
+            //Parte de lo que conecta los reportes con el controlador
+            builder.Services.AddScoped<HeladeriaJackFrost.Data.ReporteDAO>();
 
             builder.Services.AddDbContext<HeladeriaDbContext>(options =>
                 options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));

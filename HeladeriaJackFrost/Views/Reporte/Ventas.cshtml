@@ -1,0 +1,268 @@
+@model HeladeriaJackFrost.ViewModels.ReporteVentasViewModel
+
+@{
+    ViewData["Title"] = "Reporte de Ventas y Cobranzas";
+}
+
+<style>
+    .reporte-hoja {
+        background: #ffffff;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 2rem;
+    }
+
+    .banda-grupo-header {
+        background-color: #f1f5f9;
+        border-left: 4px solid #0d6efd;
+        padding: 0.45rem 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+    }
+
+    .banda-grupo-footer {
+        background-color: #f8fafc;
+        border-top: 2px solid #cbd5e1;
+        font-weight: 600;
+    }
+
+    .banda-reporte-footer {
+        border-top: 2px solid #1e293b;
+        background-color: #f8fafc;
+        padding: 1.1rem;
+        border-radius: 6px;
+    }
+
+    @@page {
+        size: letter portrait;
+        margin: 10mm;
+    }
+
+    @@media print {
+        header, nav, footer, .no-imprimir {
+            display: none !important;
+        }
+
+        body {
+            background: #ffffff !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            font-size: 11px !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .container, .reporte-hoja {
+            max-width: 100% !important;
+            width: 100% !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        .table-responsive {
+            overflow: visible !important;
+        }
+
+        .tabla-reporte {
+            width: 100% !important;
+            table-layout: fixed !important;
+            font-size: 10.5px !important;
+        }
+
+        .tabla-reporte th,
+        .tabla-reporte td {
+            padding: 4px 5px !important;
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+        }
+
+        .grupo-bloque {
+            margin-bottom: 12px !important;
+        }
+
+        .banda-grupo-header {
+            break-after: avoid;
+            page-break-after: avoid;
+            margin-bottom: 4px !important;
+            padding: 4px 8px !important;
+        }
+
+        .tabla-reporte tr {
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+
+        .banda-reporte-footer {
+            break-inside: avoid;
+            page-break-inside: avoid;
+            margin-top: 12px !important;
+            padding: 10px !important;
+        }
+    }
+</style>
+
+<div class="container mt-4 mb-5">
+    <!-- Barra de filtros (se oculta al imprimir/exportar a PDF) -->
+    <div class="card shadow-sm border-0 mb-4 no-imprimir">
+        <div class="card-body">
+            <form asp-controller="Reporte" asp-action="Ventas" method="get" class="row g-3 align-items-end">
+                <div class="col-12 col-md-3">
+                    <label for="fechaInicio" class="form-label fw-semibold">Fecha inicio</label>
+                    <input id="fechaInicio" name="fechaInicio" type="date" class="form-control"
+                           value="@Model.FechaInicio.ToString("yyyy-MM-dd")" required />
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <label for="fechaFin" class="form-label fw-semibold">Fecha fin</label>
+                    <input id="fechaFin" name="fechaFin" type="date" class="form-control"
+                           value="@Model.FechaFin.ToString("yyyy-MM-dd")" required />
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <label for="granularidad" class="form-label fw-semibold">Granularidad</label>
+                    <select id="granularidad" name="granularidad" class="form-select">
+                        <option value="Diario" selected="@(Model.Granularidad == "Diario")">Vista Diaria (por día)</option>
+                        <option value="Mensual" selected="@(Model.Granularidad == "Mensual")">Vista Mensual (por mes)</option>
+                    </select>
+                </div>
+
+                <div class="col-12 col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-fill">
+                        <i class="bi bi-funnel me-1"></i>Generar
+                    </button>
+                    <button type="button" class="btn btn-outline-dark" onclick="window.print()"
+                            disabled="@(!Model.TieneDatos)" title="Imprimir o Guardar como PDF">
+                        <i class="bi bi-printer me-1"></i>PDF
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (TempData["MensajeError"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show no-imprimir" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["MensajeError"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Hoja del Reporte -->
+    <div class="reporte-hoja shadow-sm">
+        <!-- BANDA 1: ENCABEZADO DEL REPORTE (HEADER) -->
+        <div class="d-flex justify-content-between align-items-start border-bottom pb-3 mb-4">
+            <div class="d-flex align-items-center gap-3">
+                <div class="fs-1 text-primary">
+                    <i class="bi bi-snow2"></i>
+                </div>
+                <div>
+                    <div class="text-uppercase small text-muted fw-bold">Heladería Jack Frost</div>
+                    <h2 class="h4 fw-bold mb-1">Reporte de Ventas y Cobranzas</h2>
+                    <div class="small text-secondary">
+                        <strong>Periodo:</strong> @Model.FechaInicio.ToString("dd/MM/yyyy") &mdash; @Model.FechaFin.ToString("dd/MM/yyyy")
+                        &nbsp;|&nbsp;
+                        <strong>Generado por:</strong> @Model.UsuarioGenerador
+                    </div>
+                </div>
+            </div>
+            <div class="text-end">
+                <span class="badge bg-dark text-uppercase px-3 py-2 mb-2">Modo @Model.Granularidad</span>
+                <div class="small text-muted">
+                    <strong>Emisión:</strong> @Model.FechaEmision.ToString("dd/MM/yyyy HH:mm")
+                </div>
+                <div class="small text-muted">Expresado en Bolivianos (Bs.)</div>
+            </div>
+        </div>
+
+        @if (!Model.TieneDatos)
+        {
+            <!-- Escenario sin datos (Prueba 3 - UX) -->
+            <div class="alert alert-info text-center py-5 my-4" role="alert">
+                <i class="bi bi-calendar-x display-5 d-block mb-3 text-info"></i>
+                <h5 class="fw-bold">No existen ventas registradas en el rango de fechas seleccionado</h5>
+                <p class="mb-0 text-secondary">
+                    No se encontraron transacciones válidas entre el <strong>@Model.FechaInicio.ToString("dd/MM/yyyy")</strong>
+                    y el <strong>@Model.FechaFin.ToString("dd/MM/yyyy")</strong>. Intente ampliar el periodo de búsqueda.
+                </p>
+            </div>
+        }
+        else
+        {
+            @foreach (var grupo in Model.Grupos)
+            {
+                <div class="grupo-bloque mb-4">
+                    <!-- BANDA 2: ENCABEZADO DE GRUPO (GROUP HEADER) -->
+                    <div class="banda-grupo-header d-flex justify-content-between align-items-center mb-2">
+                        <span>@(Model.Granularidad == "Mensual" ? "MES / AÑO:" : "DÍA:") @grupo.EtiquetaGrupo</span>
+                        <span class="small text-muted fw-normal">@grupo.CantidadOperaciones @(grupo.CantidadOperaciones == 1 ? "operación" : "operaciones")</span>
+                    </div>
+
+                    <!-- BANDA 3: DETALLE (DETAIL) -->
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered align-middle mb-0 tabla-reporte">
+                            <thead class="table-light">
+                            <tr>
+                                <th style="width: 8%;">Nro.</th>
+                                <th style="width: 15%;">Fecha / Hora</th>
+                                <th style="width: 22%;">Cliente</th>
+                                <th style="width: 21%;">Vendedor</th>
+                                <th class="text-end" style="width: 12%;">Subtotal</th>
+                                <th class="text-end" style="width: 10%;">Desc.</th>
+                                <th class="text-end" style="width: 12%;">Total</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var fila in grupo.Filas)
+                                {
+                                    <tr>
+                                        <td class="fw-semibold">#@fila.IdVenta</td>
+                                        <td>@fila.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
+                                        <td>@fila.Cliente</td>
+                                        <td>@fila.Vendedor</td>
+                                        <td class="text-end">Bs. @fila.SubtotalBruto.ToString("N2")</td>
+                                        <td class="text-end text-danger">Bs. @fila.MontoDescuento.ToString("N2")</td>
+                                        <td class="text-end fw-bold">Bs. @fila.TotalCobrado.ToString("N2")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <!-- BANDA 4: PIE DE GRUPO (GROUP FOOTER) -->
+                            <tfoot>
+                                <tr class="banda-grupo-footer">
+                                    <td colspan="4" class="text-end">
+                                        Subtotales de @grupo.EtiquetaGrupo (@grupo.CantidadOperaciones operaciones):
+                                    </td>
+                                    <td class="text-end">Bs. @grupo.TotalBruto.ToString("N2")</td>
+                                    <td class="text-end text-danger">Bs. @grupo.TotalDescuentos.ToString("N2")</td>
+                                    <td class="text-end text-success fw-bold">Bs. @grupo.TotalCobrado.ToString("N2")</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            }
+
+            <!-- BANDA 5: PIE DEL REPORTE (REPORT FOOTER) -->
+            <div class="banda-reporte-footer mt-4">
+                <div class="row align-items-center">
+                    <div class="col-12 col-md-7">
+                        <div class="text-uppercase small text-muted fw-bold">Gran Total del Periodo</div>
+                        <div class="small text-secondary mt-1">
+                            <strong>@Model.TotalOperaciones</strong> operaciones válidas &nbsp;|&nbsp;
+                            Subtotal Bruto: <strong>Bs. @Model.GranTotalBruto.ToString("N2")</strong> &nbsp;|&nbsp;
+                            Descuentos: <strong class="text-danger">Bs. @Model.GranTotalDescuentos.ToString("N2")</strong>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-5 text-md-end mt-2 mt-md-0">
+                        <div class="fs-3 fw-bold text-success">Bs. @Model.GranTotalCobrado.ToString("N2")</div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between small text-muted border-top mt-3 pt-2">
+                    <span>Heladería Jack Frost &mdash; Reporte de Ventas (@Model.Granularidad)</span>
+                    <span>Página 1 de 1</span>
+                </div>
+            </div>
+        }
+    </div>
+</div>
