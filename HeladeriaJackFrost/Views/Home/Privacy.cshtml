@@ -1,6 +1,249 @@
-﻿@{
-    ViewData["Title"] = "Privacy Policy";
+﻿@using System.Globalization
+@{
+    ViewData["Title"] = "Política de Privacidad";
+    var ultimaActualizacion = DateTime.Now.ToString("MMMM yyyy", new CultureInfo("es-ES"));
+    bool esPersonal = ViewData["EsPersonal"] as bool? ?? false;
 }
-<h1>@ViewData["Title"]</h1>
 
-<p>Use this page to detail your site's privacy policy.</p>
+<div class="container py-4 py-md-5">
+    <!-- Encabezado principal -->
+    <div class="row justify-content-center mb-4">
+        <div class="col-lg-10">
+            <div class="card border-0"
+                 style="border-left: 5px solid @(esPersonal ? "var(--secondary-color)" : "var(--primary-color)") !important;">
+                <div class="card-body p-4 p-md-5">
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                        @if (esPersonal)
+                        {
+                            <span class="badge" style="background-color: #e8f5ef; color: var(--success-color);">
+                                Jack Frost · Aviso para Personal Interno
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge" style="background-color: var(--primary-light); color: var(--primary-color);">
+                                Jack Frost · Información para el Público
+                            </span>
+                        }
+
+                        <span class="text-muted small">
+                            Última actualización: <strong class="text-capitalize">@ultimaActualizacion</strong>
+                        </span>
+                    </div>
+
+                    <h1 class="h2 fw-bold mb-2">@ViewData["Title"]</h1>
+
+                    @if (esPersonal)
+                    {
+                        <p class="text-muted mb-0">
+                            Lineamientos de privacidad, confidencialidad y tratamiento responsable de datos aplicables al <strong>personal de Jack Frost</strong> en el uso del sistema de gestión.
+                        </p>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0">
+                            En <strong>Jack Frost</strong> cuidamos tu privacidad y protegemos la información que compartes al interactuar con nuestra heladería y nuestros servicios.
+                        </p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenido según perfil -->
+    <div class="row justify-content-center g-4">
+        @if (esPersonal)
+        {
+            <!-- ================= VISTA PARA EL PERSONAL ================= -->
+            <div class="col-lg-3">
+                <div class="card sticky-top" style="top: 1.5rem; z-index: 10;">
+                    <div class="card-header">
+                        <h6 class="mb-0">Guía del Personal</h6>
+                    </div>
+                    <div class="card-body p-3">
+                        <nav class="nav flex-column gap-1 small">
+                            <a class="nav-link px-2 py-1 rounded" style="color: var(--text-main);" href="#cuenta-acceso">1. Cuenta y acceso</a>
+                            <a class="nav-link px-2 py-1 rounded" style="color: var(--text-main);" href="#datos-operativos">2. Ventas, stock y clientes</a>
+                            <a class="nav-link px-2 py-1 rounded" style="color: var(--text-main);" href="#confidencialidad">3. Confidencialidad interna</a>
+                            <a class="nav-link px-2 py-1 rounded" style="color: var(--text-main);" href="#sesion-seguridad">4. Sesión y seguridad</a>
+                            <a class="nav-link px-2 py-1 rounded" style="color: var(--text-main);" href="#soporte-interno">5. Soporte y reportes</a>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-7">
+                <div class="card">
+                    <div class="card-body p-4 p-md-5">
+
+                        <section id="cuenta-acceso" class="mb-4 pb-3 border-bottom">
+                            <h2 class="h5 fw-bold mb-3" style="color: var(--secondary-color);">1. Cuenta de personal y control de acceso</h2>
+                            <p class="mb-2">
+                                Tu acceso al sistema está vinculado a tu perfil de personal y cargo asignado en <strong>Jack Frost</strong>:
+                            </p>
+                            <ul class="mb-0">
+                                <li class="mb-1">Se registran datos de autenticación (usuario/correo, rol y sesión) para garantizar la seguridad del sistema.</li>
+                                <li>Las acciones realizadas en el sistema quedan asociadas a tu usuario para trazabilidad operativa y control interno.</li>
+                            </ul>
+                        </section>
+
+                        <section id="datos-operativos" class="mb-4 pb-3 border-bottom">
+                            <h2 class="h5 fw-bold mb-3" style="color: var(--secondary-color);">2. Manejo de datos de clientes, ventas y proveedores</h2>
+                            <p class="mb-2">
+                                Al registrar ventas, consultar clientes o administrar productos y proveedores:
+                            </p>
+                            <ul class="mb-0">
+                                <li class="mb-1">Consulta y registra únicamente los datos necesarios para atender la operación o el pedido.</li>
+                                <li class="mb-1">Evita exportar, fotografiar o compartir listados de clientes, ventas o información de proveedores por canales no autorizados.</li>
+                                <li>Verifica los datos antes de guardar para mantener la integridad del inventario y los reportes.</li>
+                            </ul>
+                        </section>
+
+                        <section id="confidencialidad" class="mb-4 pb-3 border-bottom">
+                            <h2 class="h5 fw-bold mb-3" style="color: var(--secondary-color);">3. Confidencialidad de la información del negocio</h2>
+                            <p class="mb-0">
+                                La información comercial, reportes de ventas, costos, descuentos, stock y datos de contacto de proveedores son de uso estrictamente interno de <strong>Jack Frost</strong> y no deben divulgarse a terceros.
+                            </p>
+                        </section>
+
+                        <section id="sesion-seguridad" class="mb-4 pb-3 border-bottom">
+                            <h2 class="h5 fw-bold mb-3" style="color: var(--secondary-color);">4. Cierre de sesión y uso de equipo</h2>
+                            <p>
+                                Si utilizas un equipo compartido en caja o mostrador, cierra siempre tu sesión al finalizar tu turno o al ausentarte del puesto.
+                            </p>
+                            <div class="alert alert-warning mb-0" role="alert">
+                                <strong>Recordatorio operativo:</strong> No compartas tu contraseña ni permitas que otra persona opere el sistema con tu sesión abierta.
+                            </div>
+                        </section>
+
+                        <section id="soporte-interno">
+                            <h2 class="h5 fw-bold mb-3" style="color: var(--secondary-color);">5. Soporte y reportes internos</h2>
+                            <p class="mb-3">
+                                Si notas un acceso indebido, necesitas reportar una incidencia de seguridad o solicitar cambios en tus permisos, contacta directamente con el encargado de administración y sistemas:
+                            </p>
+                            <div class="p-3 rounded-3"
+                                 style="background-color: var(--bg-soft); border: 1px solid var(--border-color);">
+                                <div class="fw-bold mb-1">Encargado de Administración y Sistemas · Jack Frost</div>
+                                <div class="small text-muted mb-1">Área de Control Operativo y Protección de Datos</div>
+                                <div class="small">
+                                    Correo interno:
+                                    <a href="mailto:administracion.sistemas@jackfrost.com" class="fw-semibold text-decoration-none" style="color: var(--primary-color);">
+                                        administracion.sistemas@jackfrost.com
+                                    </a>
+                                </div>
+                            </div>
+                        </section>
+
+                    </div>
+
+                    <!-- Pie separado con botón de retorno -->
+                    <div class="card-footer d-flex justify-content-end">
+                        <a asp-controller="Home" asp-action="Index" class="btn btn-outline-primary">
+                            Volver al panel principal
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <!-- ================= VISTA PARA EL PÚBLICO / CLIENTES ================= -->
+            <div class="col-lg-3">
+                <div class="card sticky-top" style="top: 1.5rem; z-index: 10;">
+                    <div class="card-header">
+                        <h6 class="mb-0">Contenido</h6>
+                    </div>
+                    <div class="card-body p-3">
+                        <nav class="nav flex-column gap-1 small">
+                            <a class="nav-link px-2 py-1 rounded" style="color: var(--text-main);" href="#info-publica">1. Información que recopilamos</a>
+                            <a class="nav-link px-2 py-1 rounded" style="color: var(--text-main);" href="#finalidad-publica">2. Cómo la utilizamos</a>
+                            <a class="nav-link px-2 py-1 rounded" style="color: var(--text-main);" href="#cookies-publica">3. Cookies y sesión</a>
+                            <a class="nav-link px-2 py-1 rounded" style="color: var(--text-main);" href="#derechos-publica">4. Tus derechos</a>
+                            <a class="nav-link px-2 py-1 rounded" style="color: var(--text-main);" href="#contacto-publica">5. Contacto</a>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-7">
+                <div class="card">
+                    <div class="card-body p-4 p-md-5">
+
+                        <section id="info-publica" class="mb-4 pb-3 border-bottom">
+                            <h2 class="h5 fw-bold mb-3" style="color: var(--primary-color);">1. Información que recopilamos</h2>
+                            <p class="mb-2">
+                                Cuando interactúas con <strong>Jack Frost</strong> como visitante o cliente, podemos registrar:
+                            </p>
+                            <ul class="mb-0">
+                                <li class="mb-1"><strong>Datos de perfil o contacto:</strong> nombre, apellidos y correo electrónico si cuentas con un perfil de cliente o solicitas atención.</li>
+                                <li><strong>Datos de consumo o beneficios:</strong> información relacionada con tus compras, pedidos o puntos acumulados en el programa de cliente, cuando aplique.</li>
+                            </ul>
+                        </section>
+
+                        <section id="finalidad-publica" class="mb-4 pb-3 border-bottom">
+                            <h2 class="h5 fw-bold mb-3" style="color: var(--primary-color);">2. Cómo utilizamos tu información</h2>
+                            <p class="mb-2">Utilizamos tus datos únicamente para:</p>
+                            <ul class="mb-0">
+                                <li class="mb-1">Atender tus consultas, pedidos o solicitudes relacionadas con nuestros productos y servicios.</li>
+                                <li class="mb-1">Gestionar tu cuenta o puntos de cliente si formas parte del sistema.</li>
+                                <li>Mejorar la atención y el funcionamiento general de la heladería.</li>
+                            </ul>
+                        </section>
+
+                        <section id="cookies-publica" class="mb-4 pb-3 border-bottom">
+                            <h2 class="h5 fw-bold mb-3" style="color: var(--primary-color);">3. Cookies y seguridad</h2>
+                            <p class="mb-0">
+                                Utilizamos únicamente cookies técnicas y de sesión necesarias para el correcto funcionamiento y seguridad del sitio. No vendemos tus datos personales a terceros.
+                            </p>
+                        </section>
+
+                        <section id="derechos-publica" class="mb-4 pb-3 border-bottom">
+                            <h2 class="h5 fw-bold mb-3" style="color: var(--primary-color);">4. Tus derechos</h2>
+                            <p class="mb-0">
+                                Puedes solicitar en cualquier momento la revisión, corrección o actualización de tus datos personales, así como consultar información sobre cómo son tratados.
+                            </p>
+                            <div class="alert alert-info mt-3 mb-0" role="alert">
+                                <strong>Compromiso Jack Frost:</strong> Solo solicitamos los datos necesarios para brindarte un buen servicio.
+                            </div>
+                        </section>
+
+                        <section id="contacto-publica">
+                            <h2 class="h5 fw-bold mb-3" style="color: var(--primary-color);">5. Contacto</h2>
+                            <p class="mb-3">
+                                Para consultas, actualización o eliminación de tus datos personales, puedes comunicarte directamente con nuestro responsable de atención y privacidad:
+                            </p>
+                            <div class="p-3 rounded-3"
+                                 style="background-color: var(--bg-soft); border: 1px solid var(--border-color);">
+                                <div class="fw-bold mb-1">Responsable de Privacidad y Atención al Cliente · Jack Frost</div>
+                                <div class="small text-muted mb-1">Administración General</div>
+                                <div class="small">
+                                    Correo de contacto:
+                                    <a href="mailto:privacidad.clientes@jackfrost.com" class="fw-semibold text-decoration-none" style="color: var(--primary-color);">
+                                        privacidad.clientes@jackfrost.com
+                                    </a>
+                                </div>
+                            </div>
+                        </section>
+
+                    </div>
+
+                    <!-- Pie separado con botón de retorno -->
+                    <div class="card-footer d-flex justify-content-end">
+                        @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Cliente"))
+                        {
+                            <a asp-controller="Cliente" asp-action="PanelCliente" class="btn btn-outline-primary">
+                                Volver a mi panel
+                            </a>
+                        }
+                        else
+                        {
+                            <a asp-controller="Acceso" asp-action="Login" class="btn btn-outline-primary">
+                                Volver al inicio de sesión
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

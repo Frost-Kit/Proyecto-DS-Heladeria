@@ -156,4 +156,15 @@ public class HomeController : Controller
     {
         return View();
     }
+    
+    [AllowAnonymous]
+    public IActionResult Privacy()
+    {
+        bool estaAutenticado = User.Identity?.IsAuthenticated == true;
+        bool esCliente = User.IsInRole("Cliente");
+        bool esPersonal = estaAutenticado && !esCliente; // cambiar segun los roles que tengamos
+
+        ViewData["EsPersonal"] = esPersonal;
+        return View();
+    }
 }
