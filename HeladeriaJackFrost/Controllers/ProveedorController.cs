@@ -1,3 +1,4 @@
+using System.Globalization;
 using HeladeriaJackFrost.Data;
 using HeladeriaJackFrost.Models;
 using HeladeriaJackFrost.ViewModels;
@@ -14,6 +15,7 @@ public class ProveedorController : Controller
 {
     private const int EstadoActivo = 1;
     private const int EstadoEliminado = 5;
+    private TextInfo _textInfo = CultureInfo.CurrentCulture.TextInfo;
 
     private readonly HeladeriaDbContext _context;
     private readonly ILogger<ProveedorController> _logger;
@@ -62,8 +64,8 @@ public class ProveedorController : Controller
                 baseEx.GetType().Name);
 
             TempData["MensajeError"] = esFalloConexion
-                ? "No pudimos conectarnos a la base de datos para cargar los proveedores. Verifica que el servicio esté activo o intenta nuevamente en unos minutos."
-                : "Ocurrió un inconveniente al cargar los proveedores. Intenta recargar la página o contacta a soporte.";
+                ? "El sistema no está disponible en este momento para mostrar los proveedores. Intenta nuevamente en unos minutos o avisa al encargado."
+                : "No pudimos cargar la lista de proveedores en este momento. Intenta actualizar la página o vuelve a intentarlo más tarde.";
         }
 
         ViewData["CurrentFilter"] = buscar;
@@ -120,8 +122,8 @@ public class ProveedorController : Controller
 
         var proveedor = new Proveedor
         {
-            Nombre = viewModel.Nombre.Trim(),
-            NombreContacto = viewModel.NombreContacto.Trim(),
+            Nombre = _textInfo.ToTitleCase(viewModel.Nombre.Trim().ToLower()),
+            NombreContacto = _textInfo.ToTitleCase(viewModel.NombreContacto.Trim().ToLower()),
             Telefono = viewModel.Telefono.Trim(),
             Direccion = viewModel.Direccion.Trim(),
             Estado = viewModel.Estado
@@ -144,7 +146,7 @@ public class ProveedorController : Controller
             _logger.LogError(ex, "Error de base de datos al crear el proveedor {Nombre}", viewModel.Nombre);
             ModelState.AddModelError(
                 string.Empty,
-                "No se pudo registrar el proveedor por un problema en la base de datos. Revisa los datos e inténtalo nuevamente.");
+                "No se pudo registrar el proveedor. Revisa que los datos estén correctos e inténtalo de nuevo.");
             return FormularioInvalido(viewModel);
         }
         catch (Exception ex)
@@ -152,7 +154,7 @@ public class ProveedorController : Controller
             _logger.LogError(ex, "Error inesperado al crear el proveedor {Nombre}", viewModel.Nombre);
             ModelState.AddModelError(
                 string.Empty,
-                "Ocurrió un inconveniente al guardar el proveedor. Verifica la conexión e inténtalo de nuevo.");
+                "No se pudo guardar el nuevo proveedor en este momento. Inténtalo nuevamente en unos instantes.");
             return FormularioInvalido(viewModel);
         }
     }
@@ -171,8 +173,8 @@ public class ProveedorController : Controller
         if (proveedor == null)
             return NotFound();
 
-        proveedor.Nombre = viewModel.Nombre;
-        proveedor.NombreContacto = viewModel.NombreContacto;
+        proveedor.Nombre = _textInfo.ToTitleCase(viewModel.Nombre.Trim().ToLower());
+        proveedor.NombreContacto = _textInfo.ToTitleCase(viewModel.NombreContacto.Trim().ToLower());
         proveedor.Telefono = viewModel.Telefono;
         proveedor.Direccion = viewModel.Direccion;
         proveedor.Estado = viewModel.Estado;
@@ -193,7 +195,7 @@ public class ProveedorController : Controller
             _logger.LogError(ex, "Error de base de datos al actualizar el proveedor {IdProveedor}", viewModel.IdProveedor);
             ModelState.AddModelError(
                 string.Empty,
-                "No se pudieron guardar los cambios por un problema en la base de datos. Inténtalo nuevamente.");
+                "No se pudieron guardar los cambios del proveedor. Revisa la información e inténtalo nuevamente.");
             return FormularioInvalido(viewModel);
         }
         catch (Exception ex)
@@ -201,7 +203,7 @@ public class ProveedorController : Controller
             _logger.LogError(ex, "Error inesperado al actualizar el proveedor {IdProveedor}", viewModel.IdProveedor);
             ModelState.AddModelError(
                 string.Empty,
-                "Ocurrió un inconveniente al actualizar el proveedor. Verifica la conexión e inténtalo de nuevo.");
+                "No pudimos actualizar los datos en este momento. Vuelve a intentarlo en unos minutos.");
             return FormularioInvalido(viewModel);
         }
     }
@@ -213,7 +215,7 @@ public class ProveedorController : Controller
     {
         if (id <= 0)
         {
-            TempData["MensajeError"] = "No se identificó un proveedor válido para eliminar. Inténtalo nuevamente.";
+            TempData["MensajeError"] = "No pudimos identificar el proveedor que deseas quitar. Vuelve a intentarlo.";
             return RedirectToAction(nameof(Index), new { buscar });
         }
 
@@ -222,7 +224,7 @@ public class ProveedorController : Controller
             var proveedor = await _context.Proveedor.FindAsync(id);
             if (proveedor == null)
             {
-                TempData["MensajeError"] = "El proveedor seleccionado ya no existe o fue eliminado previamente.";
+                TempData["MensajeError"] = "Este proveedor ya no está disponible o fue eliminado anteriormente.";
                 return RedirectToAction(nameof(Index), new { buscar });
             }
 
@@ -239,7 +241,7 @@ public class ProveedorController : Controller
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error al eliminar el proveedor {IdProveedor}", id);
-            TempData["MensajeError"] = "No se pudo completar la eliminación del proveedor. Verifica la conexión e inténtalo de nuevo.";
+            TempData["MensajeError"] = "No se pudo eliminar el proveedor en este momento. Inténtalo nuevamente más tarde.";
         }
 
         return RedirectToAction(nameof(Index), new { buscar });
